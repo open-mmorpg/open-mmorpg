@@ -4,6 +4,18 @@ using UnityEngine;
 public static class PhysicUtils
 {
     /// <summary>
+    /// Builds a ContactFilter2D that behaves like the legacy Physics2D.*NonAlloc(layerMask) queries:
+    /// filters by layer mask, honours Physics2D.queriesHitTriggers, and does not filter by depth.
+    /// </summary>
+    public static ContactFilter2D CreateContactFilter2D(int layerMask)
+    {
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.useTriggers = Physics2D.queriesHitTriggers;
+        filter.SetLayerMask(layerMask);
+        return filter;
+    }
+
+    /// <summary>
     /// Physics2D.OverlapCircleNonAlloc then sort ASC
     /// </summary>
     /// <param name="position"></param>
@@ -13,7 +25,7 @@ public static class PhysicUtils
     /// <returns></returns>
     public static int SortedOverlapCircleNonAlloc(Vector3 position, float distance, Collider2D[] colliders, int layerMask)
     {
-        int count = Physics2D.OverlapCircleNonAlloc(position, distance, colliders, layerMask);
+        int count = Physics2D.OverlapCircle(position, distance, CreateContactFilter2D(layerMask), colliders);
         System.Array.Sort(colliders, 0, count, new ColliderComparer(position));
         return count;
     }
@@ -77,7 +89,7 @@ public static class PhysicUtils
     /// <returns></returns>
     public static int SortedCircleCastNonAlloc2D(Vector2 origin, float radius, Vector2 direction, RaycastHit2D[] hits, float distance, int layerMask)
     {
-        int count = Physics2D.CircleCastNonAlloc(origin, radius, direction, hits, distance, layerMask);
+        int count = Physics2D.CircleCast(origin, radius, direction, CreateContactFilter2D(layerMask), hits, distance);
         System.Array.Sort(hits, 0, count, new RaycastHitComparer());
         return count;
     }
@@ -95,7 +107,7 @@ public static class PhysicUtils
     /// <returns></returns>
     public static int SortedBoxCastNonAlloc3D(Vector2 origin, Vector2 size, float angle, Vector2 direction, RaycastHit2D[] hits, float distance, int layerMask)
     {
-        int count = Physics2D.BoxCastNonAlloc(origin, size, angle, direction, hits, distance, layerMask);
+        int count = Physics2D.BoxCast(origin, size, angle, direction, CreateContactFilter2D(layerMask), hits, distance);
         System.Array.Sort(hits, 0, count, new RaycastHitComparer());
         return count;
     }
@@ -187,7 +199,7 @@ public static class PhysicUtils
     /// <returns></returns>
     public static int SortedLinecastNonAlloc2D(Vector2 start, Vector2 end, RaycastHit2D[] hits, int layerMask)
     {
-        int count = Physics2D.LinecastNonAlloc(start, end, hits, layerMask);
+        int count = Physics2D.Linecast(start, end, CreateContactFilter2D(layerMask), hits);
         System.Array.Sort(hits, 0, count, new RaycastHitComparer());
         return count;
     }

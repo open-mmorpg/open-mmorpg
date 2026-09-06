@@ -14,7 +14,7 @@ namespace Insthync.UnityEditorUtils.Editor
     {
         public override void Action(int instanceId, string pathName, string resourceFile)
         {
-            AssetDatabase.CreateAsset(EditorUtility.InstanceIDToObject(instanceId), AssetDatabase.GenerateUniqueAssetPath(pathName));
+            AssetDatabase.CreateAsset(EditorUtility.EntityIdToObject(instanceId), AssetDatabase.GenerateUniqueAssetPath(pathName));
         }
     }
 

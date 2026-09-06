@@ -241,6 +241,7 @@ namespace MultiplayerARPG.MMO
             if (playerCharacter == null)
             {
                 result.InvokeError(EmptyMessage.Value);
+                return;
             }
             // Delete data from database
             await Database.DeleteCharacter(request.Data.UserId, request.Data.CharacterId);

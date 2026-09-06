@@ -12,6 +12,11 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.SceneManagement;
+#endif
+
 namespace MultiplayerARPG
 {
     public enum InventorySystem
@@ -454,7 +459,7 @@ namespace MultiplayerARPG
         public bool disableDealing = false;
         [Tooltip("If this is > 0, it will limit amount of vending items")]
         public int vendingItemsLimit = 16;
-        [Tooltip("If this is `TRUE`, vending feature will be disabled, all players won't be able to deal items to each other")]
+        [Tooltip("If this is `TRUE`, vending feature will be disabled")]
         public bool disableVending = false;
         [Tooltip("If dueling request does not accepted within this duration, the request will be cancelled")]
         public float duelingRequestDuration = 5f;
@@ -462,7 +467,7 @@ namespace MultiplayerARPG
         public float duelingCountDownDuration = 3f;
         [Tooltip("Dueling duration (in seconds)")]
         public float duelingDuration = 60f * 3f;
-        [Tooltip("If this is `TRUE`, dueling feature will be disabled, all players won't be able to deal items to each other")]
+        [Tooltip("If this is `TRUE`, dueling feature will be disabled, all players won't be able to duel with each other")]
         public bool disableDueling = false;
         [Tooltip("This is a distance that allows a player to pick up an item")]
         public float pickUpItemDistance = 1f;
@@ -505,6 +510,8 @@ namespace MultiplayerARPG
         public float mountDelay = 1f;
         [Tooltip("Delay before use item again")]
         public float useItemDelay = 0.25f;
+        [Tooltip("Delay for global generic actions")]
+        public float globalActionDelay = 0.1f;
         [Tooltip("If this is `TRUE`, it will clear skills cooldown when character dead")]
         public bool clearSkillCooldownOnDead = true;
         [Tooltip("How the gold stored and being used, If this is `UserGoldOnly`, it won't have character's gold, all gold will being used from user's gold")]
@@ -1526,6 +1533,7 @@ namespace MultiplayerARPG
             // Reset gold and exp rate
             gameplayRule.GoldRate = 1f;
             gameplayRule.ExpRate = 1f;
+            gameplayRule.ItemDropRate = 1f;
 
             // Setup inventory manager
             if (inventoryManager == null)
@@ -1595,8 +1603,68 @@ namespace MultiplayerARPG
             GameDatabase.LoadData(this).Forget();
         }
 
+#if UNITY_EDITOR
+        [ContextMenu("Force Validate")]
+        public virtual bool Validate()
+        {
+            bool hasChanges = false;
+#if !DISABLE_ADDRESSABLES
+            hasChanges |= AssetReferenceLiteNetLibIdentity.ValidateHashAssetID(addressableItemDropEntityPrefab);
+            hasChanges |= AssetReferenceLiteNetLibIdentity.ValidateHashAssetID(addressableExpDropEntityPrefab);
+            hasChanges |= AssetReferenceLiteNetLibIdentity.ValidateHashAssetID(addressableGoldDropEntityPrefab);
+            hasChanges |= AssetReferenceLiteNetLibIdentity.ValidateHashAssetID(addressableWarpPortalEntityPrefab);
+            hasChanges |= AssetReferenceLiteNetLibIdentity.ValidateHashAssetID(addressablePlayerCorpsePrefab);
+            hasChanges |= AssetReferenceLiteNetLibIdentity.ValidateHashAssetID(addressableMonsterCorpsePrefab);
+#endif
+            if (npcDatabase != null)
+                hasChanges |= npcDatabase.ValidateAddressableHashAssetIDs();
+            if (warpPortalDatabase != null)
+                hasChanges |= warpPortalDatabase.ValidateAddressableHashAssetIDs();
+            if (homeScene != null)
+                hasChanges |= homeScene.Validate();
+            if (homeMobileScene != null)
+                hasChanges |= homeMobileScene.Validate();
+            if (homeConsoleScene != null)
+                hasChanges |= homeConsoleScene.Validate();
+            return hasChanges;
+        }
+
+        private void OnValidate()
+        {
+            MigrateLevelUpEffect();
+            if (Validate())
+                MarkDirty();
+        }
+
+        private bool _queuedDirty;
+        private void MarkDirty()
+        {
+            if (_queuedDirty)
+                return;
+            _queuedDirty = true;
+            EditorApplication.delayCall += DelayedMarkDirty;
+        }
+
+        private void DelayedMarkDirty()
+        {
+            _queuedDirty = false;
+            if (this == null)
+                return;
+            EditorApplication.delayCall -= DelayedMarkDirty;
+            EditorUtility.SetDirty(this);
+            if (gameObject.scene.IsValid())
+                EditorSceneManager.MarkSceneDirty(gameObject.scene);
+            PrefabStage prefabstage = PrefabStageUtility.GetCurrentPrefabStage();
+            if (prefabstage != null)
+                EditorSceneManager.MarkSceneDirty(prefabstage.scene);
+        }
+#endif
+
         protected virtual void OnDestroy()
         {
+#if UNITY_EDITOR
+            EditorApplication.delayCall -= DelayedMarkDirty;
+#endif
             this.InvokeInstanceDevExtMethods("OnDestroy");
         }
 

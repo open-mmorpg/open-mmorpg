@@ -871,7 +871,7 @@ namespace MultiplayerARPG
                     default:
                         PlayingCharacterEntity.SetLookRotation(lookAtRot, false);
                         float currentAngle = Quaternion.Angle(Quaternion.LookRotation(PlayingCharacterEntity.EntityTransform.forward), lookAtRot);
-                        turnedToTarget = currentAngle <= 15f;
+                        turnedToTarget = currentAngle <= 30f;
                         break;
                 }
                 if (turnedToTarget)
@@ -884,9 +884,11 @@ namespace MultiplayerARPG
                             _turnToTargetActionType = TargetActionType.ActionRequested;
                             break;
                         case TargetActionType.UseSkill:
+                            // TODO: May add skill option to turn to target while playing animation or not
+                            bool turnToTargetWhileActivating = _queueUsingSkill.skill != null && _queueUsingSkill.skill.TurnToTargetWhileCasting;
                             RequestUsePendingSkill();
                             OnUseSkillOnEntity();
-                            _turnToTargetActionType = TargetActionType.ActionRequested;
+                            _turnToTargetActionType = turnToTargetWhileActivating ? TargetActionType.ActionRequested : TargetActionType.ActionRequestedWithoutAnimationAwaiting;
                             break;
                         case TargetActionType.ActionRequested:
                             if (!PlayingCharacterEntity.IsPlayingAttackOrUseSkillAnimation())
@@ -894,6 +896,10 @@ namespace MultiplayerARPG
                                 _turnToTargetActionType = TargetActionType.None;
                                 _turnToTargetPosition = null;
                             }
+                            break;
+                        case TargetActionType.ActionRequestedWithoutAnimationAwaiting:
+                            _turnToTargetActionType = TargetActionType.None;
+                            _turnToTargetPosition = null;
                             break;
                     }
                 }
@@ -1046,7 +1052,7 @@ namespace MultiplayerARPG
         {
             _turnToTargetActionType = TargetActionType.Attack;
             _turnToTargetPosition = null;
-            SelectedEntity = entity;
+            TargetEntity = entity;
         }
 
         protected void TurnCharacterToPositionToAttack(Vector3 position)
@@ -1059,7 +1065,7 @@ namespace MultiplayerARPG
         {
             _turnToTargetActionType = TargetActionType.UseSkill;
             _turnToTargetPosition = null;
-            SelectedEntity = entity;
+            TargetEntity = entity;
         }
 
         protected void TurnCharacterToPositionToUsePendingSkill(Vector3 position)

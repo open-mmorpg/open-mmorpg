@@ -171,11 +171,15 @@ namespace MultiplayerARPG
                 byte cellId = reader.GetByte();
                 Vector3 localPosition = reader.GetQuantizedVector3(DefaultGridManagerComponent.Instance.CellSize, out int compressionMode);
                 position = DefaultGridManagerComponent.Instance.GetWorldPosition(cellId, localPosition);
+                // Grid path: angle is byte-compressed by GridUtility.CompressAngle in MovementJob
+                yAngle = DecompressAngle(reader.GetByte());
             }
             else
+            {
+                // Raw path: must mirror ServerWriteSyncTransform3D, which writes a packed int angle
                 position = reader.GetVector3();
-
-            yAngle = DecompressAngle(reader.GetByte());
+                yAngle = GetDecompressedAngle(reader.GetPackedInt());
+            }
             movementForceAppliers = reader.GetList<EntityMovementForceApplier>();
         }
         #endregion

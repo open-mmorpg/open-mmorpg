@@ -8,7 +8,7 @@ namespace MultiplayerARPG
         public void OnClick()
         {
             LanguageManager.ChangeLanguage(languageKey);
-            UIBase[] uis = FindObjectsOfType<UIBase>();
+            UIBase[] uis = FindObjectsByType<UIBase>(FindObjectsSortMode.None);
             for (int i = 0; i < uis.Length; ++i)
             {
                 if (!uis[i].IsVisible())

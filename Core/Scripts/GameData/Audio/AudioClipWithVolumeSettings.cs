@@ -40,6 +40,8 @@ namespace MultiplayerARPG
             return Random.Range(minRandomVolume, maxRandomVolume);
         }
 
+        // Only awaits when addressables are enabled; keep the async signature for both configurations.
+#pragma warning disable CS1998
         public async void Play(AudioSource source)
         {
 #if !UNITY_SERVER
@@ -52,6 +54,7 @@ namespace MultiplayerARPG
             AudioManager.PlaySfxClipAtAudioSource(clip, source, GetRandomedVolume());
 #endif
         }
+#pragma warning restore CS1998
 
         public void ProceedAddressableAssetConversion(string groupName)
         {

@@ -84,7 +84,8 @@ namespace LiteNetLib.Utils
             }
 
             int totalBits = bx + by + bz;
-            int byteCount = (totalBits + 7) / 8;
+            // +2 for the compression mode bits in the first byte, must match MovementJob
+            int byteCount = (totalBits + 2 + 7) / 8;
 
             ulong data = (ulong)(first & 0x3F); // first 6 bits
             int shift = 6;

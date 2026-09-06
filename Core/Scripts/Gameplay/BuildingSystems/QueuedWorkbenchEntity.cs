@@ -56,7 +56,7 @@ namespace MultiplayerARPG
             get { return !this.IsDead(); }
         }
 
-        public float TimeCounter { get; set; }
+        public float TimeCounter { get; set; } = 0f;
 
         public int SourceId
         {
@@ -86,6 +86,8 @@ namespace MultiplayerARPG
         public override bool CanActivate()
         {
             if (Identity != null && Identity.IsServer && GameInstance.PlayingCharacterEntity != null && Identity.IsHideFrom(GameInstance.PlayingCharacterEntity.Identity))
+                return false;
+            if (CanUseByCreatorOnly && !IsCreator(GameInstance.PlayingCharacterEntity))
                 return false;
             return !this.IsDead();
         }

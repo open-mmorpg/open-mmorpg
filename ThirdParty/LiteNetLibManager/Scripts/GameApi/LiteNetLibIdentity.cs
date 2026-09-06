@@ -1,5 +1,4 @@
 ﻿using Cysharp.Text;
-using Cysharp.Threading.Tasks;
 using LiteNetLib.Utils;
 using System.Collections.Generic;
 using UnityEngine;
@@ -333,7 +332,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void AssignAssetID(GameObject prefab)
+        public void AssignAssetID(GameObject prefab)
         {
             if (!string.IsNullOrWhiteSpace(assetId) && !forceUseAssetGUIDAsAssetId)
                 return;
@@ -360,7 +359,7 @@ namespace LiteNetLibManager
         }
 
         [ContextMenu("Assign Asset ID")]
-        internal void AssignAssetID()
+        public void AssignAssetID()
         {
             string oldAssetId = assetId;
             GameObject prefab;
@@ -383,11 +382,13 @@ namespace LiteNetLibManager
             }
             // Do not mark dirty while playing
             if (!Application.isPlaying && !string.Equals(oldAssetId, assetId))
-                EditorUtility.SetDirty(this);
+            {
+                MarkDirty();
+            }
         }
 
         [ContextMenu("Assign Scene Object ID")]
-        internal void AssignSceneObjectID()
+        public void AssignSceneObjectID()
         {
             Scene objectScene = gameObject.scene;
             if (!objectScene.IsValid())
@@ -395,6 +396,7 @@ namespace LiteNetLibManager
                 Debug.LogWarning($"[LiteNetLibIdentity] Only object in valid scene can be assigned", gameObject);
                 return;
             }
+            string oldSceneObjectId = sceneObjectId;
             if (string.IsNullOrWhiteSpace(sceneObjectId) || sceneObjectId.Equals("0") || FoundAObjectWithSceneObjectID(objectScene, sceneObjectId, this))
             {
                 int countSuffix = 0;
@@ -405,7 +407,11 @@ namespace LiteNetLibManager
                 } while (string.IsNullOrWhiteSpace(sceneObjectId) || sceneObjectId.Equals("0") || FoundAObjectWithSceneObjectID(objectScene, sceneObjectId, this));
                 Debug.Log($"[LiteNetLibIdentity] Scene object ID assigned: {sceneObjectId}", gameObject);
             }
-            EditorUtility.SetDirty(gameObject);
+            // Do not mark dirty while playing
+            if (!Application.isPlaying && !string.Equals(oldSceneObjectId, sceneObjectId))
+            {
+                MarkDirty();
+            }
         }
 
         [ContextMenu("Assign All Scene Object IDs (If Empty Or Duplicated)")]
@@ -430,15 +436,20 @@ namespace LiteNetLibManager
                 }
                 rootObjects = null;
             }
-            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
-        internal static string GenerateSceneObjectId(LiteNetLibIdentity identity, int countSuffix)
+        [ContextMenu("Write Selected Asset IDs To Console")]
+        public void WriteSelectedAssetIDsToConsole()
+        {
+            Debug.Log($"[LiteNetLibIdentity] Selected Asset ID: {AssetId}, Hashed: {HashAssetId}, Scene Object ID: {sceneObjectId}, Name: {name}", gameObject);
+        }
+
+        public static string GenerateSceneObjectId(LiteNetLibIdentity identity, int countSuffix)
         {
             return $"{identity.name}_{countSuffix}";
         }
 
-        internal static bool FoundAObjectWithSceneObjectID(Scene loadedScene, string id, LiteNetLibIdentity ignoreIdentity)
+        public static bool FoundAObjectWithSceneObjectID(Scene loadedScene, string id, LiteNetLibIdentity ignoreIdentity)
         {
             if (!loadedScene.isLoaded)
                 return false;
@@ -456,6 +467,29 @@ namespace LiteNetLibManager
                 }
             }
             return false;
+        }
+
+        private bool _queuedDirty;
+        private void MarkDirty()
+        {
+            if (_queuedDirty)
+                return;
+            _queuedDirty = true;
+            EditorApplication.delayCall += DelayedMarkDirty;
+        }
+
+        private void DelayedMarkDirty()
+        {
+            _queuedDirty = false;
+            if (this == null)
+                return;
+            EditorApplication.delayCall -= DelayedMarkDirty;
+            EditorUtility.SetDirty(this);
+            if (gameObject.scene.IsValid())
+                EditorSceneManager.MarkSceneDirty(gameObject.scene);
+            PrefabStage prefabstage = PrefabStageUtility.GetCurrentPrefabStage();
+            if (prefabstage != null)
+                EditorSceneManager.MarkSceneDirty(prefabstage.scene);
         }
 #endif
         #endregion
@@ -689,6 +723,11 @@ namespace LiteNetLibManager
             return connectionId == ConnectionId || HasSubscriber(connectionId);
         }
 
+        public HashSet<long>.Enumerator GetSubscribers()
+        {
+            return Subscribers.GetEnumerator();
+        }
+
         public void AddSubscribing(uint subscribing)
         {
             Subscribings.Add(subscribing);
@@ -756,6 +795,11 @@ namespace LiteNetLibManager
             }
         }
 
+        public HashSet<uint>.Enumerator GetSubscribings()
+        {
+            return Subscribings.GetEnumerator();
+        }
+
         public bool IsDifferSubChannelId(LiteNetLibIdentity identity)
         {
             if (identity == null)
@@ -798,9 +842,7 @@ namespace LiteNetLibManager
                 // Not hide, so not hide
                 return false;
             }
-            /// 
-            /// Added identity since it could have exceptions that apply to the object owner instead of the viewer.
-            if (HideExceptions.Contains(identity.ConnectionId))
+            if (HideExceptions.Contains(ConnectionId))
             {
                 // In hide exception conditions, so not hide
                 return false;
@@ -839,10 +881,12 @@ namespace LiteNetLibManager
             // Reset renderers/audio sources
             foreach (Renderer renderer in _hiddingRenderers)
             {
+                if (renderer == null) continue;
                 renderer.forceRenderingOff = false;
             }
             foreach (AudioSource audioSource in _hiddingAudioSources)
             {
+                if (audioSource == null) continue;
                 audioSource.mute = false;
             }
             _hiddingRenderers.Clear();
@@ -864,10 +908,12 @@ namespace LiteNetLibManager
             // Reset renderers/audio sources
             foreach (Renderer renderer in _hiddingRenderers)
             {
+                if (renderer == null) continue;
                 renderer.forceRenderingOff = false;
             }
             foreach (AudioSource audioSource in _hiddingAudioSources)
             {
+                if (audioSource == null) continue;
                 audioSource.mute = false;
             }
             _hiddingRenderers.Clear();
@@ -926,11 +972,13 @@ namespace LiteNetLibManager
 
         internal void OnNetworkDestroy(byte reasons)
         {
+            IsSpawned = false;
             byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnNetworkDestroy(reasons);
             }
+            ResetSyncElements();
             if (Manager.IsServer)
             {
                 // If this is server, send message to clients to destroy object
@@ -951,12 +999,11 @@ namespace LiteNetLibManager
             // Clear data
             Subscribings.Clear();
             Subscribers.Clear();
-            IsSpawned = false;
         }
 
         internal void OnGetInstance()
         {
-            ResetSyncData();
+            ResetSyncElements();
             onGetInstance.Invoke();
         }
 
@@ -965,7 +1012,7 @@ namespace LiteNetLibManager
             onPushBack.Invoke();
         }
 
-        internal void ResetSyncData()
+        internal void ResetSyncElements()
         {
             // Clear/reset syncing data
             foreach (LiteNetLibSyncElement field in SyncElements.Values)
@@ -1017,6 +1064,9 @@ namespace LiteNetLibManager
 #if !UNITY_SERVER
             _hiddingRenderers.Clear();
             _hiddingAudioSources.Clear();
+#endif
+#if UNITY_EDITOR
+            EditorApplication.delayCall -= DelayedMarkDirty;
 #endif
         }
     }

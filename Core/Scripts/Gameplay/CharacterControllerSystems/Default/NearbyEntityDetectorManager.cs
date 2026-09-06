@@ -7,10 +7,20 @@ namespace MultiplayerARPG
     {
         private static NearbyEntityDetectorManager _instance;
         public static NearbyEntityDetectorManager Instance => _instance != null ? _instance : (_instance = CreateInstance());
-        private static HashSet<NearbyEntityDetector> _detectors = new HashSet<NearbyEntityDetector>();
+        private static readonly HashSet<NearbyEntityDetector> _detectors = new HashSet<NearbyEntityDetector>();
         private static float _latestDetectTime = -1f;
+        private static float _latestSortTime = -1f;
 
-        public float delay = 1f;
+        public float detectDelay = 0.5f;
+        public float sortDelay = 1f;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        public static void Initialize()
+        {
+            _instance = null;
+            _latestDetectTime = -1f;
+            _latestSortTime = -1f;
+        }
 
         private static NearbyEntityDetectorManager CreateInstance()
         {
@@ -69,18 +79,35 @@ namespace MultiplayerARPG
                 return;
 
             float currentTime = Time.unscaledTime;
-            if (currentTime - _latestDetectTime > delay)
+            bool willDetect = currentTime - _latestDetectTime > detectDelay;
+            if (willDetect)
             {
                 _latestDetectTime = currentTime;
-                foreach (NearbyEntityDetector entityDetector in _detectors)
-                {
-                    entityDetector.DetectEntities();
-                    entityDetector.SortNearestAllEntity();
-                }
+            }
+            bool willSort = currentTime - _latestSortTime > sortDelay;
+            if (willSort)
+            {
+                _latestSortTime = currentTime;
             }
             foreach (NearbyEntityDetector entityDetector in _detectors)
             {
-                entityDetector.RemoveInactiveAllEntity();
+                bool hasChanges = false;
+                if (willDetect)
+                {
+                    hasChanges |= entityDetector.DetectEntities();
+                }
+                else
+                {
+                    hasChanges |= entityDetector.RemoveAllInactiveEntities();
+                }
+                if (willDetect || willSort)
+                {
+                    entityDetector.SortAllEntities();
+                }
+                if (hasChanges)
+                {
+                    entityDetector.TriggerOnUpdateList();
+                }
             }
         }
     }

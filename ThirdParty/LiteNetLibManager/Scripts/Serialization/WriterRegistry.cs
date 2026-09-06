@@ -164,7 +164,6 @@ namespace LiteNetLibManager.Serialization
         public static void WriteSByte(NetDataWriter writer, object value) => writer.Put((sbyte)value);
         public static void WriteChar(NetDataWriter writer, object value) => writer.Put((char)value);
         public static void WriteDouble(NetDataWriter writer, object value) => writer.Put((double)value);
-        //WriteSingle is a float but tries to pack as a bool
         public static void WriteSingle(NetDataWriter writer, object value) => writer.Put((float)value);
         public static void WriteInt16(NetDataWriter writer, object value) => writer.PutPackedShort((short)value);
         public static void WriteUInt16(NetDataWriter writer, object value) => writer.PutPackedUShort((ushort)value);

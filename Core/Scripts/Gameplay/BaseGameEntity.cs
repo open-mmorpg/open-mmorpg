@@ -5,7 +5,6 @@ using Insthync.ManagedUpdating;
 using Insthync.UnityEditorUtils;
 using LiteNetLib;
 using LiteNetLibManager;
-using System.Collections.Generic;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -30,32 +29,8 @@ namespace MultiplayerARPG
 
         public virtual int EntityId
         {
-            get
-            {
-                if (MetaDataId != 0)
-                    return MetaDataId;
-                return HashAssetId;
-            }
+            get { return HashAssetId; }
             set { }
-        }
-
-        [SerializeField]
-        protected SyncFieldInt syncMetaDataId = new SyncFieldInt();
-        private int _metaDataId;
-        public int MetaDataId
-        {
-            get
-            {
-                if (syncMetaDataId.Value != 0)
-                    return syncMetaDataId.Value;
-                return _metaDataId;
-            }
-            set
-            {
-                if (CurrentGameManager.IsServer)
-                    syncMetaDataId.Value = value;
-                _metaDataId = value;
-            }
         }
 
         public bool ForceHide { get; set; }
@@ -81,6 +56,11 @@ namespace MultiplayerARPG
             get { return entityTitles; }
         }
 
+        public virtual string EntityTitle
+        {
+            get { return Language.GetText(entityTitles, entityTitle); }
+        }
+
         [Category(100, "Sync Fields", false)]
         [SerializeField]
         protected SyncFieldString syncTitle = new SyncFieldString();
@@ -88,6 +68,7 @@ namespace MultiplayerARPG
         {
             get { return syncTitle; }
         }
+
         public string Title
         {
             get { return !string.IsNullOrEmpty(syncTitle.Value) ? syncTitle.Value : EntityTitle; }
@@ -111,11 +92,6 @@ namespace MultiplayerARPG
             get { return nonOwnerObjects; }
         }
 
-        public virtual string EntityTitle
-        {
-            get { return Language.GetText(entityTitles, entityTitle); }
-        }
-
         [Category(2, "Components")]
         [SerializeField]
         protected GameEntityModel model = null;
@@ -132,6 +108,8 @@ namespace MultiplayerARPG
         {
             get
             {
+                if (OverrideCameraTargetTransform.TryGetValue(out Transform camTransform))
+                    return camTransform;
                 if (!PassengingVehicleEntity.IsNull())
                 {
                     if (PassengingVehicleSeat.cameraTarget == VehicleSeatCameraTarget.Vehicle)
@@ -141,6 +119,8 @@ namespace MultiplayerARPG
             }
             set { cameraTargetTransform = value; }
         }
+
+        public readonly ValueOverride<Transform> OverrideCameraTargetTransform = new ValueOverride<Transform>();
 
         [Tooltip("Transform for position which camera will look at and follow while playing in FPS view mode")]
         [SerializeField]
@@ -189,8 +169,7 @@ namespace MultiplayerARPG
             get { return gameObject; }
         }
 
-        public readonly HashSet<object> MovementDisablers = new HashSet<object>();
-        public bool DisableMovement => MovementDisablers.Count > 0;
+        public readonly StateFlag MovementDisableState = new StateFlag();
 
         public virtual bool IsUpdateEntityComponents
         {
@@ -204,11 +183,11 @@ namespace MultiplayerARPG
             }
         }
 
-        protected bool _isTeleporting;
-        protected bool _stillMoveAfterTeleport;
-        protected Vector3 _teleportingPosition;
-        protected Quaternion _teleportingRotation;
-        private bool? _wasUpdateEntityComponents;
+        protected bool _isTeleporting = false;
+        protected bool _stillMoveAfterTeleport = false;
+        protected Vector3 _teleportingPosition = Vector3.zero;
+        protected Quaternion _teleportingRotation = Quaternion.identity;
+        private bool? _wasUpdateEntityComponents = null;
 
         /// <summary>
         /// Override this function to initial required components
@@ -272,7 +251,7 @@ namespace MultiplayerARPG
             if (onDestroy != null)
                 onDestroy.Invoke(this);
             this.InvokeInstanceDevExtMethods("OnDestroy");
-            Clean();
+            Clean(true);
         }
         protected virtual void EntityOnDestroy()
         {
@@ -383,7 +362,7 @@ namespace MultiplayerARPG
         {
             if (!Movement.IsNull())
             {
-                bool tempEnableMovement = PassengingVehicleEntity.IsNull() && !DisableMovement;
+                bool tempEnableMovement = PassengingVehicleEntity.IsNull() && !MovementDisableState.IsActive;
                 // Enable movement or not
                 if (Movement.enabled != tempEnableMovement)
                 {
@@ -507,7 +486,6 @@ namespace MultiplayerARPG
 
         protected virtual void SetupNetElements()
         {
-            syncMetaDataId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             syncTitle.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             syncTitle.redundancyCount = 0;
             syncOverrideInput.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
@@ -529,6 +507,7 @@ namespace MultiplayerARPG
             base.OnNetworkDestroy(reasons);
             if (onNetworkDestroy != null)
                 onNetworkDestroy.Invoke(this, reasons);
+            Clean(false);
         }
 
         public virtual bool IsHide()
@@ -554,6 +533,25 @@ namespace MultiplayerARPG
         public virtual bool NotBeingSelectedOnClick()
         {
             return false;
+        }
+
+        public void SetNextActionDelay(ref float lastActionTime, float delay)
+        {
+            lastActionTime = Time.unscaledTime + delay;
+        }
+
+        public bool UpdateLastActionTime(ref float lastActionTime, float delay)
+        {
+            float time = Time.unscaledTime;
+            if (time - lastActionTime < delay)
+                return false;
+            lastActionTime = time;
+            return true;
+        }
+
+        public bool CanDoNextAction(ref float lastActionTime, float delay)
+        {
+            return Time.unscaledTime - lastActionTime >= delay;
         }
 
         public virtual void CallCmdPerformHitRegValidation(HitRegisterData hitData)

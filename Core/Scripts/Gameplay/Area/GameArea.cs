@@ -292,7 +292,7 @@ namespace MultiplayerARPG
         [ContextMenu("Bake Random Positions (All Areas)")]
         public void BakeAllRandomPositions()
         {
-            GameArea[] areas = FindObjectsOfType<GameArea>();
+            GameArea[] areas = FindObjectsByType<GameArea>(FindObjectsSortMode.None);
             for (int i = 0; i < areas.Length; ++i)
             {
                 if (areas[i].excludeFromAllAreaBaking)

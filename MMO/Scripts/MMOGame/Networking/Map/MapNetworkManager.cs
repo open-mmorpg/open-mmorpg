@@ -97,8 +97,8 @@ namespace MultiplayerARPG.MMO
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
         private readonly ConcurrentDictionary<string, CentralServerPeerInfo> _mapServerConnectionIdsBySceneName = new ConcurrentDictionary<string, CentralServerPeerInfo>();
         private readonly ConcurrentDictionary<string, CentralServerPeerInfo> _instanceMapServerConnectionIdsByInstanceId = new ConcurrentDictionary<string, CentralServerPeerInfo>();
-        private readonly ConcurrentDictionary<string, SocialCharacterData> _usersByCharacterId = new ConcurrentDictionary<string, SocialCharacterData>();
-        private readonly ConcurrentDictionary<long, IPlayerCharacterData> _pendingSpawnPlayerCharacters = new ConcurrentDictionary<long, IPlayerCharacterData>();
+        private readonly ConcurrentDictionary<string, SocialCharacterData> _socialCharactersByUserId = new ConcurrentDictionary<string, SocialCharacterData>();
+        private readonly ConcurrentDictionary<string, IPlayerCharacterData> _pendingSpawnPlayerCharactersByUserId = new ConcurrentDictionary<string, IPlayerCharacterData>();
         // Database operations
         private readonly ConcurrentHashSet<StorageId> _loadingStorageIds = new ConcurrentHashSet<StorageId>();
         private readonly ConcurrentHashSet<int> _loadingPartyIds = new ConcurrentHashSet<int>();
@@ -208,8 +208,8 @@ namespace MultiplayerARPG.MMO
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
             _mapServerConnectionIdsBySceneName.Clear();
             _instanceMapServerConnectionIdsByInstanceId.Clear();
-            _usersByCharacterId.Clear();
-            _pendingSpawnPlayerCharacters.Clear();
+            _socialCharactersByUserId.Clear();
+            _pendingSpawnPlayerCharactersByUserId.Clear();
             _loadingStorageIds.Clear();
             _loadingPartyIds.Clear();
             _loadedPartyTimes.Clear();
@@ -224,17 +224,18 @@ namespace MultiplayerARPG.MMO
 #endif
         }
 
+#if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
         protected override void UpdateOnlineCharacter(BasePlayerCharacterEntity playerCharacterEntity)
         {
+            // Set user data to map server
+            SocialCharacterData userData = SocialCharacterData.Create(playerCharacterEntity);
+            _socialCharactersByUserId[userData.userId] = userData;
+            // Add map user to cluster server
+            if (ClusterClient.IsNetworkActive)
+                UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Online, userData);
             base.UpdateOnlineCharacter(playerCharacterEntity);
-#if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
-            if (ClusterClient.IsNetworkActive && _usersByCharacterId.TryGetValue(playerCharacterEntity.Id, out SocialCharacterData tempUserData))
-            {
-                _usersByCharacterId[playerCharacterEntity.Id] = tempUserData = SocialCharacterData.Create(playerCharacterEntity);
-                UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Online, tempUserData);
-            }
-#endif
         }
+#endif
 
         public async void ProceedBeforeQuit()
         {
@@ -273,14 +274,11 @@ namespace MultiplayerARPG.MMO
         public override void RegisterPlayerCharacter(long connectionId, BasePlayerCharacterEntity playerCharacterEntity)
         {
             // Set user data to map server
-            if (!_usersByCharacterId.ContainsKey(playerCharacterEntity.Id))
-            {
-                SocialCharacterData userData = SocialCharacterData.Create(playerCharacterEntity);
-                _usersByCharacterId.TryAdd(userData.id, userData);
-                // Add map user to cluster server
-                if (ClusterClient.IsNetworkActive)
-                    UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Add, userData);
-            }
+            SocialCharacterData userData = SocialCharacterData.Create(playerCharacterEntity);
+            _socialCharactersByUserId[userData.userId] = userData;
+            // Add map user to cluster server
+            if (ClusterClient.IsNetworkActive)
+                UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Add, userData);
             base.RegisterPlayerCharacter(connectionId, playerCharacterEntity);
         }
 #endif
@@ -289,13 +287,12 @@ namespace MultiplayerARPG.MMO
         public override void UnregisterPlayerCharacter(long connectionId)
         {
             // Send remove character from map server
-            if (ServerUserHandlers.TryGetPlayerCharacter(connectionId, out IPlayerCharacterData playerCharacter) &&
-                _usersByCharacterId.TryGetValue(playerCharacter.Id, out SocialCharacterData userData))
+            if (ServerUserHandlers.TryGetPlayerCharacter(connectionId, out IPlayerCharacterData playerCharacter))
             {
-                _usersByCharacterId.TryRemove(playerCharacter.Id, out _);
+                _socialCharactersByUserId.TryRemove(playerCharacter.UserId, out _);
                 // Remove map user from cluster server
                 if (ClusterClient.IsNetworkActive)
-                    UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Remove, userData);
+                    UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Remove, SocialCharacterData.Create(playerCharacter));
             }
             base.UnregisterPlayerCharacter(connectionId);
         }
@@ -313,6 +310,7 @@ namespace MultiplayerARPG.MMO
         {
             if (ServerUserHandlers.TryGetUserId(connectionId, out string userId))
             {
+                _pendingSpawnPlayerCharactersByUserId.TryRemove(userId, out _);
                 storageUsers.TryRemove(userId, out _);
             }
             base.UnregisterUserIdAndAccessToken(connectionId);
@@ -529,11 +527,11 @@ namespace MultiplayerARPG.MMO
                     playerCharacterData.CurrentRotation = rotation;
                 }
 
-                _pendingSpawnPlayerCharacters[connectionId] = playerCharacterData;
+                _pendingSpawnPlayerCharactersByUserId[userId] = playerCharacterData;
             }
             else
             {
-                _pendingSpawnPlayerCharacters[connectionId] = spawnedCharacterEntity;
+                _pendingSpawnPlayerCharactersByUserId[userId] = spawnedCharacterEntity;
             }
             return true;
         }
@@ -567,7 +565,7 @@ namespace MultiplayerARPG.MMO
                 _clientReadyRequestResponseMessages[requestId] = UITextKeys.UI_ERROR_INVALID_USER_TOKEN;
                 return UniTask.FromResult(false);
             }
-            if (!_pendingSpawnPlayerCharacters.TryGetValue(connectionId, out IPlayerCharacterData data))
+            if (!_pendingSpawnPlayerCharactersByUserId.TryRemove(userId, out IPlayerCharacterData data))
             {
                 _clientReadyRequestResponseMessages[requestId] = UITextKeys.UI_ERROR_CHARACTER_NOT_FOUND;
                 return UniTask.FromResult(false);
@@ -691,7 +689,7 @@ namespace MultiplayerARPG.MMO
                     });
                     if (!summonBuffsResp.IsSuccess)
                     {
-                        Destroy(spawnObj.gameObject);
+                        Assets.DestroyObjectInstance(spawnObj);
                         KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
                         return;
                     }
@@ -701,15 +699,15 @@ namespace MultiplayerARPG.MMO
                 // Make sure that player does not exit before character data loaded
                 if (!ContainsConnectionId(connectionId))
                 {
-                    Destroy(spawnObj.gameObject);
+                    Assets.DestroyObjectInstance(spawnObj);
                     KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
                     return;
                 }
 
                 // Make sure that there is no another player, enter the game with the character yet (prevent nested login)
-                if (_usersByCharacterId.ContainsKey(playerCharacterEntity.Id))
+                if (_socialCharactersByUserId.ContainsKey(playerCharacterEntity.UserId))
                 {
-                    Destroy(spawnObj.gameObject);
+                    Assets.DestroyObjectInstance(spawnObj);
                     KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
                     return;
                 }
@@ -1174,20 +1172,25 @@ namespace MultiplayerARPG.MMO
         {
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
             UpdateUserCharacterMessage message = messageHandler.ReadMessage<UpdateUserCharacterMessage>();
+            if (ServerUserHandlers.TryGetConnectionIdByUserId(message.character.userId, out _))
+            {
+                // This server is already handle this user ID, don't do anything
+                return;
+            }
             switch (message.type)
             {
                 case UpdateUserCharacterMessage.UpdateType.Add:
-                    if (!_usersByCharacterId.ContainsKey(message.character.id))
-                        _usersByCharacterId.TryAdd(message.character.id, message.character);
+                    if (!_socialCharactersByUserId.ContainsKey(message.character.userId))
+                        _socialCharactersByUserId.TryAdd(message.character.userId, message.character);
                     break;
                 case UpdateUserCharacterMessage.UpdateType.Remove:
-                    _usersByCharacterId.TryRemove(message.character.id, out _);
+                    _socialCharactersByUserId.TryRemove(message.character.userId, out _);
                     break;
                 case UpdateUserCharacterMessage.UpdateType.Online:
-                    if (_usersByCharacterId.ContainsKey(message.character.id))
+                    if (_socialCharactersByUserId.ContainsKey(message.character.userId))
                     {
                         int socialId;
-                        ServerCharacterHandlers.MarkOnlineCharacter(message.character.id);
+                        ServerCharacterHandlers.MarkOnlineCharacter(message.character.userId);
                         socialId = message.character.partyId;
                         if (socialId > 0 && ServerPartyHandlers.TryGetParty(socialId, out PartyData party))
                         {
@@ -1200,7 +1203,7 @@ namespace MultiplayerARPG.MMO
                             guild.UpdateMember(message.character);
                             ServerGuildHandlers.SetGuild(socialId, guild);
                         }
-                        _usersByCharacterId[message.character.id] = message.character;
+                        _socialCharactersByUserId[message.character.userId] = message.character;
                     }
                     break;
             }
@@ -1406,7 +1409,7 @@ namespace MultiplayerARPG.MMO
         private void UpdateMapUsers(LiteNetLibClient transportHandler, UpdateUserCharacterMessage.UpdateType updateType)
         {
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
-            foreach (SocialCharacterData user in _usersByCharacterId.Values)
+            foreach (SocialCharacterData user in _socialCharactersByUserId.Values)
             {
                 UpdateMapUser(transportHandler, updateType, user);
             }

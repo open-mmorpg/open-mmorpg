@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using Cysharp.Text;
+using Cysharp.Threading.Tasks;
+using LiteNetLib;
+using LiteNetLib.Utils;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
-using LiteNetLib;
-using LiteNetLib.Utils;
-using Cysharp.Threading.Tasks;
-using Cysharp.Text;
 
 namespace LiteNetLibManager
 {
@@ -346,12 +346,12 @@ namespace LiteNetLibManager
 
         public void ClientSendPacket<T>(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
-            ClientSendPacket(dataChannel, deliveryMethod, msgType, (writer) =>
-            {
-                messageData.Serialize(writer);
-                if (extraSerializer != null)
-                    extraSerializer.Invoke(writer);
-            });
+            NetDataWriter writer = Client.s_Writer;
+            TransportHandler.WritePacket(writer, msgType);
+            messageData.Serialize(writer);
+            if (extraSerializer != null)
+                extraSerializer.Invoke(writer);
+            Client.SendMessage(dataChannel, deliveryMethod, writer);
         }
 
         public void ClientSendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)
@@ -371,12 +371,12 @@ namespace LiteNetLibManager
 
         public void ServerSendPacket<T>(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
-            ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, (writer) =>
-            {
-                messageData.Serialize(writer);
-                if (extraSerializer != null)
-                    extraSerializer.Invoke(writer);
-            });
+            NetDataWriter writer = Server.s_Writer;
+            TransportHandler.WritePacket(writer, msgType);
+            messageData.Serialize(writer);
+            if (extraSerializer != null)
+                extraSerializer.Invoke(writer);
+            Server.SendMessage(connectionId, dataChannel, deliveryMethod, writer);
         }
 
         public void ServerSendPacket(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)
@@ -448,12 +448,12 @@ namespace LiteNetLibManager
 
         public void ServerSendPacketToAllConnections<T>(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
-            Server.SendPacketToAllConnections(dataChannel, deliveryMethod, msgType, (writer) =>
-            {
-                messageData.Serialize(writer);
-                if (extraSerializer != null)
-                    extraSerializer.Invoke(writer);
-            });
+            NetDataWriter writer = Server.s_Writer;
+            TransportHandler.WritePacket(writer, msgType);
+            messageData.Serialize(writer);
+            if (extraSerializer != null)
+                extraSerializer.Invoke(writer);
+            Server.SendMessageToAllConnections(dataChannel, deliveryMethod, writer);
         }
 
         public void ServerSendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)

@@ -61,6 +61,27 @@ namespace MultiplayerARPG
         public Quest[] quests;
         public Faction[] factions;
 
+#if UNITY_EDITOR
+        public override bool Validate()
+        {
+            bool hasChanges = false;
+            hasChanges |= ValidateAddressableHashAssetIDs();
+            return hasChanges;
+        }
+
+        public bool ValidateAddressableHashAssetIDs()
+        {
+            bool hasChanges = false;
+#if !DISABLE_ADDRESSABLES
+            hasChanges |= AssetReferenceLiteNetLibIdentity.ValidateHashAssetIDs(addressablePlayerCharacterEntities);
+            hasChanges |= AssetReferenceLiteNetLibIdentity.ValidateHashAssetIDs(addressableMonsterCharacterEntities);
+            hasChanges |= AssetReferenceLiteNetLibIdentity.ValidateHashAssetIDs(addressableVehicleEntities);
+            hasChanges |= AssetReferenceLiteNetLibIdentity.ValidateHashAssetIDs(addressableOtherNetworkObjects);
+#endif
+            return hasChanges;
+        }
+#endif
+
         protected override UniTask LoadDataImplement(GameInstance gameInstance)
         {
 #if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES

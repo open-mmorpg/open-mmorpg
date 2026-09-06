@@ -13,7 +13,7 @@ public class ColorHierarchy
 
     private static void RenderObjects(int instanceID, Rect selectionRect)
     {
-        GameObject gameObject = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
+        GameObject gameObject = EditorUtility.EntityIdToObject(instanceID) as GameObject;
         
         if (gameObject == null) return;
 

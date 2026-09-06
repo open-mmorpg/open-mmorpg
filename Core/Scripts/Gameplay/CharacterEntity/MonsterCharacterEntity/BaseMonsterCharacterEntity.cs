@@ -44,7 +44,7 @@ namespace MultiplayerARPG
             get
             {
                 string title = base.EntityTitle;
-                return !string.IsNullOrEmpty(title) ? title : characterDatabase.Title;
+                return !string.IsNullOrWhiteSpace(title) ? title : characterDatabase.Title;
             }
         }
 
@@ -125,12 +125,11 @@ namespace MultiplayerARPG
         }
 
         public readonly List<GameObject> InstantiatedObjects = new List<GameObject>();
-
         protected bool _isObjectsInstantiated = false;
-        protected bool _isDestroyed;
+        protected bool _isDestroyed = false;
         protected readonly HashSet<string> _looters = new HashSet<string>();
         protected readonly List<CharacterItem> _droppingItems = new List<CharacterItem>();
-        protected Reward _killedReward;
+        protected Reward _killedReward = null;
         protected float _lastTeleportToSummonerTime = 0f;
 
         public override void PrepareRelatesData()
@@ -506,7 +505,7 @@ namespace MultiplayerARPG
                             // Make this player character to be able to pick up item because it made most damage
                             _looters.Add(tempPlayerCharacterEntity.Id);
                             // And also change item drop rate
-                            itemDropRate = 1f + tempPlayerCharacterEntity.CachedData.Stats.itemDropRate;
+                            itemDropRate = GameInstance.Singleton.GameplayRule.ItemDropRate + tempPlayerCharacterEntity.CachedData.Stats.itemDropRate;
                         }
                         GivingRewardToGuild(tempPlayerCharacterEntity, reward, rewardRate, out float shareGuildExpRate);
                         GivingRewardToParty(tempPlayerCharacterEntity, isLastAttacker, reward, rewardRate, shareGuildExpRate, makeMostDamage, out givenRewardExp, out givenRewardGold, out givenRewardCurrencies);

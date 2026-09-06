@@ -23,7 +23,7 @@ namespace MultiplayerARPG
                 limit = 50,
             }, GetGuildRequestsCallback);
             // Update notification count
-            UIGuildRequestNotification[] notifications = FindObjectsOfType<UIGuildRequestNotification>();
+            UIGuildRequestNotification[] notifications = FindObjectsByType<UIGuildRequestNotification>(UnityEngine.FindObjectsSortMode.None);
             for (int i = 0; i < notifications.Length; ++i)
             {
                 notifications[i].Refresh();

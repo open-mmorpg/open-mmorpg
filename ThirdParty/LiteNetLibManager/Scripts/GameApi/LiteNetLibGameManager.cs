@@ -38,7 +38,6 @@ namespace LiteNetLibManager
         public bool doNotDestroyOnSceneChanges = false;
         public bool loadOfflineSceneWhenClientStopped = true;
         public float baseLineSyncInterval = 1f;
-        public bool safeGameStatePacket = false;
 
         internal protected readonly Dictionary<long, LiteNetLibPlayer> Players = new Dictionary<long, LiteNetLibPlayer>();
 
@@ -342,7 +341,7 @@ namespace LiteNetLibManager
                     Assets.onLoadAdditiveSceneStart.Invoke(LoadedAdditiveScenesCount, TotalAdditiveScensCount);
                     for (int j = 0; j < listOfLoaders.Count; ++j)
                     {
-                        await listOfLoaders[i].LoadAll(this, serverSceneInfo.isAddressable ? serverSceneInfo.addressableKey : serverSceneInfo.sceneName, isOnline);
+                        await listOfLoaders[j].LoadAll(this, serverSceneInfo.isAddressable ? serverSceneInfo.addressableKey : serverSceneInfo.sceneName, isOnline);
                     }
                     Assets.onLoadAdditiveSceneFinish.Invoke(LoadedAdditiveScenesCount, TotalAdditiveScensCount);
                 }

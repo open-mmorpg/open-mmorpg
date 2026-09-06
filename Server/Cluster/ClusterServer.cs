@@ -555,6 +555,8 @@ namespace MultiplayerARPG.MMO
 #endif
         }
 
+        // Request handler delegates require async UniTaskVoid; this handler has no asynchronous work.
+#pragma warning disable CS1998
         internal async UniTaskVoid HandleRequestChannels(
 RequestHandlerData requestHandler,
 EmptyMessage request,
@@ -567,6 +569,7 @@ RequestProceedResultDelegate<ResponseChannelsMessage> result)
             });
 #endif
         }
+#pragma warning restore CS1998
 
         internal async UniTaskVoid HandleRequestForceDespawnCharacter(
             RequestHandlerData requestHandler,
@@ -585,6 +588,8 @@ RequestProceedResultDelegate<ResponseChannelsMessage> result)
 #endif
         }
 
+        // Request handler delegates require async UniTaskVoid; this handler has no asynchronous work.
+#pragma warning disable CS1998
         internal async UniTaskVoid HandleRequestCheckChannelsLimit(
     RequestHandlerData requestHandler,
     RequestCheckChannelsLimit request,
@@ -605,6 +610,7 @@ RequestProceedResultDelegate<ResponseChannelsMessage> result)
             return;
 #endif
         }
+#pragma warning restore CS1998
 
         public async UniTask RequestSpawnMap(long mapSpawnConnectionId, RequestSpawnMapMessage request, string key, RequestProceedResultDelegate<ResponseSpawnMapMessage> resultForMapServer)
         {

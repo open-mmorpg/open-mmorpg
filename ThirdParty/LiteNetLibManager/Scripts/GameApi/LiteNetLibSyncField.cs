@@ -67,22 +67,17 @@ namespace LiteNetLibManager
             return false;
         }
 
-        internal override sealed bool CanSyncDelta()
+        internal override bool CanSyncDelta()
         {
             return true;
-        }
-
-        protected virtual bool BaseLineOnly()
-        {
-            return false;
         }
 
         protected void ValueChangedState(bool latestChangeSyncedFromOwner)
         {
             _latestChangeSyncedFromOwner = latestChangeSyncedFromOwner;
-            if (BaseLineOnly())
+            if (!CanSyncDelta())
             {
-                _currentRedundancy = 1;
+                _currentRedundancy = 0;
             }
             else
             {
@@ -275,7 +270,11 @@ namespace LiteNetLibManager
 
         internal override sealed void Reset()
         {
-            Value = _defaultValue;
+            _value = _defaultValue;
+            _latestChangeSyncedFromOwner = false;
+            _latestReceiveTick = 0;
+            _currentRedundancy = 0;
+            UnregisterUpdating();
         }
     }
 
@@ -686,13 +685,13 @@ namespace LiteNetLibManager
     [Serializable]
     public class SyncFieldString : LiteNetLibSyncField<string>
     {
-        // Acutally can be 1024 - 1 (unreliable header) - 2 (packet type) - 4 (tick) - 2 (object length) - 4 (object ID) - 2 (element length)
+        // Acutally can be 1024 - 1 (unreliable header) - 2 (packet type) - 4 (tick) - 2 (object length) - 4 (object ID) - 2 (object data length) - 2 (element length) - 2 (string length)
         // But simply just use 1000
         public const ushort MAX_LENGTH_FOR_UNRELIABLE_PACKET = 1000;
 
-        protected override bool BaseLineOnly()
+        internal override bool CanSyncDelta()
         {
-            return _value.Length > MAX_LENGTH_FOR_UNRELIABLE_PACKET;
+            return _value.Length <= MAX_LENGTH_FOR_UNRELIABLE_PACKET;
         }
 
         internal override void DeserializeValue(NetDataReader reader)

@@ -16,7 +16,6 @@ namespace MultiplayerARPG
     [RequireComponent(typeof(CharacterSkillAndBuffComponent))]
     public abstract partial class BaseCharacterEntity : DamageableEntity, ICharacterData
     {
-        public const float ACTION_DELAY = 0.1f;
         public const float RESPAWN_GROUNDED_CHECK_DURATION = 1f;
         public const float RESPAWN_INVINCIBLE_DURATION = 1f;
         public const float FIND_ENTITY_DISTANCE_BUFFER = 1f;
@@ -138,16 +137,28 @@ namespace MultiplayerARPG
         public MovementRestriction MovementRestrictionWhileCharging { get { return ChargeComponent.MovementRestrictionWhileCharging; } }
         public float RespawnGroundedCheckCountDown { get; protected set; }
         public float RespawnInvincibleCountDown { get; protected set; }
-        public float LastUseItemTime { get; set; }
+        protected float _lastUseItemTime;
+        public float LastUseItemTime { get { return _lastUseItemTime; } set { _lastUseItemTime = value; } }
         public float LastActionEndTime => Mathf.Max(LastAttackEndTime, LastUseSkillEndTime, LastReloadEndTime);
-
-        protected int _countDownToUpdateAppearances = FRAMES_BEFORE_UPDATE_APPEARANCES;
         protected float _lastActionTime;
+        public float LastActionTime { get { return _lastActionTime; } set { _lastActionTime = value; } }
+        public readonly StateFlag FallDamageDisableState = new StateFlag();
+        protected int _countDownToUpdateAppearances = FRAMES_BEFORE_UPDATE_APPEARANCES;
         #endregion
 
         public IPhysicFunctions AttackPhysicFunctions { get; protected set; }
         public IPhysicFunctions FindPhysicFunctions { get; protected set; }
 
+        public override int EntityId
+        {
+            get
+            {
+                if (MetaDataId != 0)
+                    return MetaDataId;
+                return HashAssetId;
+            }
+            set { }
+        }
         public override bool IsInvincible { get { return base.IsInvincible || RespawnInvincibleCountDown > 0f; } set { base.IsInvincible = value; } }
         public override int MaxHp { get { return CachedData.MaxHp; } }
         public int MaxMp { get { return CachedData.MaxMp; } }
@@ -282,7 +293,7 @@ namespace MultiplayerARPG
                     CurrentGameplayRule.ApplyFallDamage(this, _lastGroundedPosition);
                 }
                 // Set last grounded state, it will be used next frame to find
-                _lastGrounded = isGrounded;
+                _lastGrounded = isGrounded || FallDamageDisableState.IsActive;
                 if (_lastGrounded)
                 {
                     // Set last grounded position, it will be used to calculate fall damage
@@ -441,7 +452,7 @@ namespace MultiplayerARPG
             if (!CanAttack())
                 return false;
 
-            if (!UpdateLastActionTime())
+            if (!UpdateLastActionTime(ref _lastActionTime, CurrentGameInstance.globalActionDelay))
                 return false;
 
             characterItem = this.GetAvailableWeapon(ref isLeftHand);
@@ -488,7 +499,7 @@ namespace MultiplayerARPG
             if (!CanUseSkill())
                 return false;
 
-            if (!UpdateLastActionTime())
+            if (!UpdateLastActionTime(ref _lastActionTime, CurrentGameInstance.globalActionDelay))
                 return false;
 
             if (!this.ValidateSkillToUse(dataId, isLeftHand, targetObjectId, out BaseSkill skill, out _, out UITextKeys gameMessage))
@@ -527,7 +538,7 @@ namespace MultiplayerARPG
             if (!CanUseSkillItem())
                 return false;
 
-            if (!UpdateLastActionTime())
+            if (!UpdateLastActionTime(ref _lastActionTime, CurrentGameInstance.globalActionDelay))
                 return false;
 
             if (!this.ValidateSkillItemToUse(index, isLeftHand, targetObjectId, out _, out BaseSkill skill, out _, out UITextKeys gameMessage))
@@ -688,20 +699,6 @@ namespace MultiplayerARPG
             return false;
         }
 
-        public bool UpdateLastActionTime()
-        {
-            float time = Time.unscaledTime;
-            if (time - _lastActionTime < ACTION_DELAY)
-                return false;
-            _lastActionTime = time;
-            return true;
-        }
-
-        public bool CanDoNextAction()
-        {
-            return Time.unscaledTime - _lastActionTime >= ACTION_DELAY;
-        }
-
         public void ClearActionStates()
         {
             AttackComponent.ClearAttackStates();
@@ -717,7 +714,12 @@ namespace MultiplayerARPG
 
         public AimPosition GetAttackAimPosition(ref bool isLeftHand, Vector3 targetPosition)
         {
-            return GetAttackAimPosition(this.GetAvailableWeaponDamageInfo(ref isLeftHand), isLeftHand, targetPosition);
+            return GetAttackAimPosition(ref isLeftHand, targetPosition, out _);
+        }
+
+        public AimPosition GetAttackAimPosition(ref bool isLeftHand, Vector3 targetPosition, out Transform damageTransform)
+        {
+            return GetAttackAimPosition(this.GetAvailableWeaponDamageInfo(ref isLeftHand), isLeftHand, targetPosition, out damageTransform);
         }
 
         public AimPosition GetAttackAimPositionByDirection(ref bool isLeftHand, Vector3 direction, bool aimToTargetIfExisted = true)
@@ -754,7 +756,13 @@ namespace MultiplayerARPG
 
         public AimPosition GetAttackAimPosition(DamageInfo damageInfo, bool isLeftHand, Vector3 targetPosition)
         {
-            return GetAttackAimPosition(damageInfo.GetDamageTransform(this, isLeftHand).position, targetPosition);
+            return GetAttackAimPosition(damageInfo, isLeftHand, targetPosition, out _);
+        }
+
+        public AimPosition GetAttackAimPosition(DamageInfo damageInfo, bool isLeftHand, Vector3 targetPosition, out Transform damageTransform)
+        {
+            damageTransform = damageInfo.GetDamageTransform(this, isLeftHand);
+            return GetAttackAimPosition(damageTransform.position, targetPosition);
         }
 
         public AimPosition GetAttackAimPosition(Vector3 position, Vector3 targetPosition)
@@ -880,15 +888,6 @@ namespace MultiplayerARPG
             return IsPlayingAttackOrUseSkillAnimation() || IsPlayingReloadAnimation();
         }
 
-        public float GetAttackSpeed()
-        {
-            float atkSpeed = CachedData.AtkSpeed;
-            // Minimum attack speed is 0.1
-            if (atkSpeed <= 0.1f)
-                atkSpeed = 0.1f;
-            return atkSpeed;
-        }
-
         public override bool IsHide()
         {
             return CachedData.IsHide;
@@ -920,6 +919,11 @@ namespace MultiplayerARPG
 
         public bool IsPositionInFov(Vector3 origin, float fov, Vector3 position)
         {
+            if (Movement.GetMovementBounds().Contains(position))
+            {
+                // Very close to target, determine that it is in fov
+                return true;
+            }
             if (CurrentGameInstance.DimensionType == DimensionType.Dimension2D)
                 return origin.GetVector2().IsPositionInFov2D(fov, position, Direction2D);
             return origin.IsPositionInFov3D(fov, position, EntityTransform.forward);
@@ -1119,14 +1123,6 @@ namespace MultiplayerARPG
                     model.GetLeftHandReloadAnimation(skillOrWeaponTypeDataId, out animSpeedRate, out triggerDurations, out totalDuration);
                     break;
             }
-        }
-
-        public float GetAnimSpeedRate(AnimActionType animActionType)
-        {
-            if (animActionType == AnimActionType.AttackRightHand ||
-                animActionType == AnimActionType.AttackLeftHand)
-                return GetAttackSpeed();
-            return 1f;
         }
         #endregion
 

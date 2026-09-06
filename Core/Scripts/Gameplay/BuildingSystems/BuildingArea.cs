@@ -39,7 +39,7 @@ namespace MultiplayerARPG
                 {
                     CacheRigidbody2D = gameObject.GetOrAddComponent<Rigidbody2D>();
                     CacheRigidbody2D.gravityScale = 0;
-                    CacheRigidbody2D.isKinematic = true;
+                    CacheRigidbody2D.bodyType = RigidbodyType2D.Kinematic;
                 }
             }
         }

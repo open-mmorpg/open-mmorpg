@@ -71,6 +71,8 @@ namespace MultiplayerARPG.MMO
 #endif
         }
 
+        // Request handler delegates require async UniTaskVoid; this handler has no asynchronous work.
+#pragma warning disable CS1998
         public async UniTaskVoid HandleRequestUnlockContent(RequestHandlerData requestHandler, RequestUnlockContentMessage request, RequestProceedResultDelegate<ResponseUnlockContentMessage> result)
         {
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
@@ -90,5 +92,6 @@ namespace MultiplayerARPG.MMO
             });
 #endif
         }
+#pragma warning restore CS1998
     }
 }

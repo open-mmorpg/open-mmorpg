@@ -49,7 +49,7 @@ namespace UtilsComponents
         [ContextMenu("Find All Canvas Scaler And Set To List")]
         public void FindAllCanvasScalerAndSetToList()
         {
-            CanvasScaler[] result = FindObjectsOfType<CanvasScaler>(true);
+            CanvasScaler[] result = FindObjectsByType<CanvasScaler>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             scalers.Clear();
             scalers.AddRange(result);
             EditorUtility.SetDirty(this);

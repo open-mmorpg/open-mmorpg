@@ -118,7 +118,7 @@ namespace MultiplayerARPG
                 onlyNewMails = onlyNewMails,
             }, MailListCallback);
             // Update notification count
-            UIMailNotification[] notifications = FindObjectsOfType<UIMailNotification>();
+            UIMailNotification[] notifications = FindObjectsByType<UIMailNotification>(FindObjectsSortMode.None);
             for (int i = 0; i < notifications.Length; ++i)
             {
                 notifications[i].Refresh();

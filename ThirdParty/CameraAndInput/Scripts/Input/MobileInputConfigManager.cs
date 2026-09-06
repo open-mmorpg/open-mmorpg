@@ -52,7 +52,7 @@ namespace Insthync.CameraAndInput
 
         public void LoadConfig()
         {
-            var comps = FindObjectsOfType<MobileInputConfig>();
+            var comps = FindObjectsByType<MobileInputConfig>(FindObjectsSortMode.None);
             foreach (var comp in comps)
             {
                 comp.LoadPosition();

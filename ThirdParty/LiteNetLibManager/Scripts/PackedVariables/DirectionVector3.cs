@@ -1,5 +1,4 @@
-//bad values are forced back into the safe range
-using UnityEngine;
+﻿using UnityEngine;
 using LiteNetLib.Utils;
 
 namespace LiteNetLibManager
@@ -8,27 +7,16 @@ namespace LiteNetLibManager
     {
         public static implicit operator DirectionVector3(Vector3 value) => new DirectionVector3(value);
         public static implicit operator Vector3(DirectionVector3 value) => value.ToVector3();
-
-        private const float MULTIPLIER = 100f;
-        private const float INV_MULTIPLIER = 1f / MULTIPLIER;
-
-        public Vector3 ToVector3() => new Vector3(x * INV_MULTIPLIER, y * INV_MULTIPLIER, z * INV_MULTIPLIER);
-
+        public Vector3 ToVector3() => new Vector3((float)x / 100f, (float)y / 100f, (float)z / 100f);
         public sbyte x;
         public sbyte y;
         public sbyte z;
 
         public DirectionVector3(Vector3 vector3)
         {
-            x = PackDirectionComponent(vector3.x);
-            y = PackDirectionComponent(vector3.y);
-            z = PackDirectionComponent(vector3.z);
-        }
-
-        private static sbyte PackDirectionComponent(float value)
-        {
-            value = Mathf.Clamp(value, -1f, 1f);
-            return (sbyte)Mathf.RoundToInt(value * MULTIPLIER);
+            x = (sbyte)(vector3.x * 100);
+            y = (sbyte)(vector3.y * 100);
+            z = (sbyte)(vector3.z * 100);
         }
 
         public void Serialize(NetDataWriter writer)

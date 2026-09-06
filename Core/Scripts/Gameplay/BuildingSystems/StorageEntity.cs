@@ -1,6 +1,5 @@
 ﻿using Insthync.UnityEditorUtils;
 using LiteNetLibManager;
-using LiteNetLib;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -40,7 +39,7 @@ namespace MultiplayerARPG
         [SerializeField]
         protected SyncFieldBool isOpen = new SyncFieldBool();
 
-        private bool _dirtyIsOpen;
+        private bool _dirtyIsOpen = false;
 
         public override void PrepareRelatesData()
         {
@@ -114,6 +113,8 @@ namespace MultiplayerARPG
         public override bool CanActivate()
         {
             if (Identity != null && Identity.IsServer && GameInstance.PlayingCharacterEntity != null && Identity.IsHideFrom(GameInstance.PlayingCharacterEntity.Identity))
+                return false;
+            if (CanUseByCreatorOnly && !IsCreator(GameInstance.PlayingCharacterEntity))
                 return false;
             return !this.IsDead();
         }

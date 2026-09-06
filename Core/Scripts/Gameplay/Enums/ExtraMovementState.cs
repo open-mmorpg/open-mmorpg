@@ -15,4 +15,15 @@ namespace MultiplayerARPG
         IsFlying,
         IsSitting,
     }
+
+    public static class ExtraMovementStateExtensions
+    {
+        public static bool IsStanding(this ExtraMovementState self)
+        {
+            return self == ExtraMovementState.None ||
+                self == ExtraMovementState.IsSprinting ||
+                self == ExtraMovementState.IsWalking ||
+                self == ExtraMovementState.IsFlying;
+        }
+    }
 }

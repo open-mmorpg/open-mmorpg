@@ -1,4 +1,4 @@
-// CE scalability: #12
+﻿// CE scalability: #12
 
 using LiteNetLibManager;
 using System.Buffers;
@@ -59,6 +59,8 @@ namespace MultiplayerARPG
         private readonly HashSet<Collider2D> _excludeCollider2Ds = new HashSet<Collider2D>();
         private readonly BaseGameEntityDistanceComparer _baseGameEntityDistanceComparer = new BaseGameEntityDistanceComparer();
         private readonly ActivatableEntityDistanceComparer _activatableEntityDistanceComparer = new ActivatableEntityDistanceComparer();
+        private readonly HashSet<GameObject> _foundObjects = new HashSet<GameObject>();
+        private readonly HashSet<GameObject> _prevFoundObjects = new HashSet<GameObject>();
 
         public System.Action onUpdateList;
 
@@ -70,6 +72,8 @@ namespace MultiplayerARPG
 
         private void OnDestroy()
         {
+            _foundObjects?.Clear();
+            _prevFoundObjects?.Clear();
             ClearDetection();
             ClearExclusion();
             onUpdateList = null;
@@ -123,85 +127,114 @@ namespace MultiplayerARPG
             _excludeCollider2Ds.Clear();
         }
 
-        internal void DetectEntities()
+        internal void TriggerOnUpdateList()
+        {
+            onUpdateList?.Invoke();
+        }
+
+        internal bool DetectEntities()
         {
             int tempHitCount;
+
+            _prevFoundObjects.Clear();
+            foreach (GameObject foundObject in _foundObjects)
+            {
+                if (foundObject != null)
+                    _prevFoundObjects.Add(foundObject);
+            }
+            _foundObjects.Clear();
+
             ClearDetection();
+
             switch (GameInstance.Singleton.DimensionType)
             {
                 case DimensionType.Dimension2D:
                     Collider2D[] collider2Ds = ArrayPool<Collider2D>.Shared.Rent(resultAllocSize);
-                    tempHitCount = Physics2D.OverlapCircleNonAlloc(GameInstance.PlayingCharacterEntity.EntityTransform.position, detectingRadius, collider2Ds);
+
+                    tempHitCount = Physics2D.OverlapCircle(
+                        GameInstance.PlayingCharacterEntity.EntityTransform.position,
+                        detectingRadius,
+                        PhysicUtils.CreateContactFilter2D(Physics2D.DefaultRaycastLayers),
+                        collider2Ds);
+
                     for (int i = 0; i < tempHitCount; ++i)
                     {
                         Collider2D other = collider2Ds[i];
+
                         if (other == null || _excludeCollider2Ds.Contains(other))
                             continue;
-                        AddEntity(other.gameObject);
+
+                        if (AddEntity(other.gameObject))
+                            _foundObjects.Add(other.gameObject);
                     }
+
                     ArrayPool<Collider2D>.Shared.Return(collider2Ds);
-                    if (onUpdateList != null)
-                        onUpdateList.Invoke();
                     break;
+
                 default:
                     Collider[] colliders = ArrayPool<Collider>.Shared.Rent(resultAllocSize);
-                    tempHitCount = Physics.OverlapSphereNonAlloc(GameInstance.PlayingCharacterEntity.EntityTransform.position, detectingRadius, colliders);
+
+                    tempHitCount = Physics.OverlapSphereNonAlloc(
+                        GameInstance.PlayingCharacterEntity.EntityTransform.position,
+                        detectingRadius,
+                        colliders);
+
                     for (int i = 0; i < tempHitCount; ++i)
                     {
                         Collider other = colliders[i];
+
                         if (other == null || _excludeColliders.Contains(other))
                             continue;
-                        AddEntity(other.gameObject);
+
+                        if (AddEntity(other.gameObject))
+                            _foundObjects.Add(other.gameObject);
                     }
+
                     ArrayPool<Collider>.Shared.Return(colliders);
-                    if (onUpdateList != null)
-                        onUpdateList.Invoke();
                     break;
             }
+
+            return !_foundObjects.SetEquals(_prevFoundObjects);
         }
 
-        internal void RemoveInactiveAndSortNearestAllEntity()
+        internal bool RemoveAllInactiveEntities()
         {
-            RemoveInactiveAllEntity();
-            SortNearestAllEntity();
+            bool hasChanges = false;
+            hasChanges |= RemoveInactiveEntities(characters, _characterSet);
+            hasChanges |= RemoveInactiveEntities(players, _playerSet);
+            hasChanges |= RemoveInactiveEntities(monsters, _monsterSet);
+            hasChanges |= RemoveInactiveEntities(npcs, _npcSet);
+            hasChanges |= RemoveInactiveEntities(itemDrops, _itemDropSet);
+            hasChanges |= RemoveInactiveEntities(rewardDrops, _rewardDropSet);
+            hasChanges |= RemoveInactiveEntities(buildings, _buildingSet);
+            hasChanges |= RemoveInactiveEntities(vehicles, _vehicleSet);
+            hasChanges |= RemoveInactiveEntities(warpPortals, _warpPortalSet);
+            hasChanges |= RemoveInactiveEntities(itemsContainers, _itemsContainerSet);
+            hasChanges |= RemoveInactiveActivatableEntities(activatableEntities, _activatableEntitySet);
+            hasChanges |= RemoveInactiveActivatableEntities(holdActivatableEntities, _holdActivatableEntitySet);
+            hasChanges |= RemoveInactiveActivatableEntities(pickupActivatableEntities, _pickupActivatableEntitySet);
+            return hasChanges;
         }
 
-        internal void RemoveInactiveAllEntity()
-        {
-            RemoveInactiveEntity(characters, _characterSet);
-            RemoveInactiveEntity(players, _playerSet);
-            RemoveInactiveEntity(monsters, _monsterSet);
-            RemoveInactiveEntity(npcs, _npcSet);
-            RemoveInactiveEntity(itemDrops, _itemDropSet);
-            RemoveInactiveEntity(rewardDrops, _rewardDropSet);
-            RemoveInactiveEntity(buildings, _buildingSet);
-            RemoveInactiveEntity(vehicles, _vehicleSet);
-            RemoveInactiveEntity(warpPortals, _warpPortalSet);
-            RemoveInactiveEntity(itemsContainers, _itemsContainerSet);
-            RemoveInactiveActivatableEntity(activatableEntities, _activatableEntitySet);
-            RemoveInactiveActivatableEntity(holdActivatableEntities, _holdActivatableEntitySet);
-            RemoveInactiveActivatableEntity(pickupActivatableEntities, _pickupActivatableEntitySet);
-        }
-
-        internal void SortNearestAllEntity()
+        internal void SortAllEntities()
         {
             Vector3 playerPosition = GameInstance.PlayingCharacterEntity.EntityTransform.position;
             _baseGameEntityDistanceComparer.PlayerPosition = playerPosition;
             _activatableEntityDistanceComparer.PlayerPosition = playerPosition;
 
-            SortNearestEntity(characters);
-            SortNearestEntity(players);
-            SortNearestEntity(monsters);
-            SortNearestEntity(npcs);
-            SortNearestEntity(itemDrops);
-            SortNearestEntity(rewardDrops);
-            SortNearestEntity(buildings);
-            SortNearestEntity(vehicles);
-            SortNearestEntity(warpPortals);
-            SortNearestEntity(itemsContainers);
-            SortNearestActivatableEntity(activatableEntities);
-            SortNearestActivatableEntity(holdActivatableEntities);
-            SortNearestActivatableEntity(pickupActivatableEntities);
+            SortEntities(characters);
+            SortEntities(players);
+            SortEntities(monsters);
+            SortEntities(npcs);
+            SortEntities(itemDrops);
+            SortEntities(rewardDrops);
+            SortEntities(buildings);
+            SortEntities(vehicles);
+            SortEntities(warpPortals);
+            SortEntities(itemsContainers);
+            SortActivatableEntities(activatableEntities);
+            SortActivatableEntities(holdActivatableEntities);
+            SortActivatableEntities(pickupActivatableEntities);
         }
 
         public bool AddEntity(GameObject other)
@@ -537,7 +570,8 @@ namespace MultiplayerARPG
             }
         }
 
-        private void RemoveInactiveEntity<T>(List<T> entities, HashSet<T> entitiesSet) where T : BaseGameEntity
+
+        private bool RemoveInactiveEntities<T>(List<T> entities, HashSet<T> entitiesSet) where T : BaseGameEntity
         {
             bool hasUpdate = false;
             for (int i = entities.Count - 1; i >= 0; --i)
@@ -553,11 +587,10 @@ namespace MultiplayerARPG
                     hasUpdate = true;
                 }
             }
-            if (hasUpdate && onUpdateList != null)
-                onUpdateList.Invoke();
+            return hasUpdate;
         }
 
-        private void RemoveInactiveActivatableEntity<T>(List<T> entities, HashSet<T> entitiesSet) where T : IBaseActivatableEntity
+        private bool RemoveInactiveActivatableEntities<T>(List<T> entities, HashSet<T> entitiesSet) where T : IBaseActivatableEntity
         {
             bool hasUpdate = false;
             for (int i = entities.Count - 1; i >= 0; --i)
@@ -573,19 +606,18 @@ namespace MultiplayerARPG
                     hasUpdate = true;
                 }
             }
-            if (hasUpdate && onUpdateList != null)
-                onUpdateList.Invoke();
+            return hasUpdate;
         }
 
-        private void SortNearestEntity<T>(List<T> entities) where T : BaseGameEntity
+        private void SortEntities<T>(List<T> entities) where T : BaseGameEntity
         {
-            if (entities.Count > 1)
+            if (entities != null && entities.Count > 1)
                 entities.Sort(_baseGameEntityDistanceComparer);
         }
 
-        private void SortNearestActivatableEntity<T>(List<T> entities) where T : IBaseActivatableEntity
+        private void SortActivatableEntities<T>(List<T> entities) where T : IBaseActivatableEntity
         {
-            if (entities.Count > 1)
+            if (entities != null && entities.Count > 1)
                 entities.Sort((x, y) => _activatableEntityDistanceComparer.Compare(x, y));
         }
 

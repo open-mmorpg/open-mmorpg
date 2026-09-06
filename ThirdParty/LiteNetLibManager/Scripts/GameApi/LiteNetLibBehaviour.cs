@@ -38,6 +38,7 @@ namespace LiteNetLibManager
         private readonly Dictionary<string, int> _allRpcIds = new Dictionary<string, int>();
         private readonly Dictionary<string, int> _serverRpcIds = new Dictionary<string, int>();
 
+        private int _lastGetIdentityFrame = 0;
         private LiteNetLibIdentity _identity;
         public LiteNetLibIdentity Identity
         {
@@ -46,9 +47,18 @@ namespace LiteNetLibManager
                 if (this == null)
                     return null;
                 if (_identity == null)
+                {
+                    if (Application.isPlaying)
+                    {
+                        int currentFrame = Time.frameCount;
+                        if (_lastGetIdentityFrame >= currentFrame)
+                            return _identity;
+                        _lastGetIdentityFrame = currentFrame;
+                    }
                     _identity = GetComponent<LiteNetLibIdentity>();
-                if (_identity == null)
-                    _identity = GetComponentInParent<LiteNetLibIdentity>();
+                    if (_identity == null)
+                        _identity = GetComponentInParent<LiteNetLibIdentity>();
+                }
                 return _identity;
             }
         }
@@ -70,82 +80,82 @@ namespace LiteNetLibManager
 
         public bool IsSpawned
         {
-            get { return Identity.IsSpawned; }
+            get { return Identity != null && Identity.IsSpawned; }
         }
 
         public bool IsDestroyed
         {
-            get { return Identity.IsDestroyed; }
+            get { return Identity != null && Identity.IsDestroyed; }
         }
 
         public long ConnectionId
         {
-            get { return Identity.ConnectionId; }
+            get { return Identity != null ? Identity.ConnectionId : -1; }
         }
 
         public uint ObjectId
         {
-            get { return Identity.ObjectId; }
+            get { return Identity != null ? Identity.ObjectId : 0; }
         }
 
         public byte SyncChannelId
         {
-            get { return Identity.SyncChannelId; }
+            get { return Identity != null ? Identity.SyncChannelId : default; }
         }
 
         public byte DefaultRpcChannelId
         {
-            get { return Identity.DefaultRpcChannelId; }
+            get { return Identity != null ? Identity.DefaultRpcChannelId : default; }
         }
 
         public string SubChannelId
         {
-            get { return Identity.SubChannelId; }
+            get { return Identity != null ? Identity.SubChannelId : string.Empty; }
         }
 
         public LiteNetLibGameManager Manager
         {
-            get { return Identity.Manager; }
+            get { return Identity != null ? Identity.Manager : null; }
         }
 
         public LiteNetLibPlayer Player
         {
-            get { return Identity.Player; }
+            get { return Identity != null ? Identity.Player : null; }
         }
 
         public bool IsServer
         {
-            get { return Identity.IsServer; }
+            get { return Identity != null && Identity.IsServer; }
         }
 
         public bool IsClient
         {
-            get { return Identity.IsClient; }
+            get { return Identity != null && Identity.IsClient; }
         }
 
         public bool IsOwnerClient
         {
-            get { return Identity.IsOwnerClient; }
+            get { return Identity != null && Identity.IsOwnerClient; }
         }
 
         public bool IsOwnerHost
         {
-            get { return Identity.IsOwnerHost; }
+            get { return Identity != null && Identity.IsOwnerHost; }
         }
 
         public bool IsOwnedByServer
         {
-            get { return Identity.IsOwnedByServer; }
+            get { return Identity != null && Identity.IsOwnedByServer; }
         }
 
         public bool IsOwnerClientOrOwnedByServer
         {
-            get { return Identity.IsOwnerClientOrOwnedByServer; }
+            get { return Identity != null && Identity.IsOwnerClientOrOwnedByServer; }
         }
 
         public bool IsSceneObject
         {
-            get { return Identity.IsSceneObject; }
+            get { return Identity != null && Identity.IsSceneObject; }
         }
 
         public virtual string LogTag
@@ -248,6 +258,13 @@ namespace LiteNetLibManager
                 if (syncElement == null)
                     continue;
                 int syncElementId = LiteNetLibIdentity.GetHashedId(MakeSyncElementId(syncElementFieldInfo));
+                if (Identity.SyncElements.TryGetValue(syncElementId, out LiteNetLibSyncElement existedElement) && !ReferenceEquals(existedElement, syncElement))
+                {
+                    // 32-bit hash collision between two different sync element ids, do not silently overwrite the existed one
+                    if (Manager.LogError)
+                        Logging.LogError(LogTag, $"[{TypeFullName}] Hash collision while registering sync element [{syncElementFieldInfo.Name}]: hashed id [{syncElementId}] already registered. This sync element will not sync, rename the field or the behaviour type.");
+                    continue;
+                }
                 syncElement.Setup(this, syncElementId);
                 Identity.SyncElements[syncElementId] = syncElement;
             }
@@ -726,6 +743,13 @@ namespace LiteNetLibManager
                 return;
             }
             int elementId = LiteNetLibIdentity.GetHashedId(id);
+            if (Identity.RPCs.TryGetValue(elementId, out LiteNetLibRPC existedRpc) && !ReferenceEquals(existedRpc, rpc))
+            {
+                // 32-bit hash collision between two different rpc ids, do not silently overwrite the existed one
+                if (Manager.LogError)
+                    Logging.LogError(LogTag, $"[{TypeFullName}] Hash collision while registering rpc [{id}]: hashed id [{elementId}] already registered. This rpc will not work, rename the method or the behaviour type.");
+                return;
+            }
             rpc.Setup(this, elementId);
             rpc.CanCallByEveryone = canCallByEveryone;
             Identity.RPCs[elementId] = rpc;

@@ -77,7 +77,7 @@ namespace MultiplayerARPG
                 return false;
             if (!characterEntity.CanUseItem())
                 return false;
-            SafeArea[] safeAreas = FindObjectsOfType<SafeArea>();
+            SafeArea[] safeAreas = FindObjectsByType<SafeArea>(FindObjectsSortMode.None);
             SafeArea randomedSafeArea = safeAreas.GetRandomObjectInArray(out _);
             if (!randomedSafeArea)
                 return false;

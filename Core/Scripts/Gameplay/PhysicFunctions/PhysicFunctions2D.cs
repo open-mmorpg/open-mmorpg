@@ -80,7 +80,7 @@ namespace MultiplayerARPG
         public int OverlapObjects(Vector3 position, float radius, int layerMask, bool sort = false, QueryTriggerInteraction hitTriggers = QueryTriggerInteraction.UseGlobal, bool hitBackfaces = false, bool hitMultipleFaces = false)
         {
             return sort ? PhysicUtils.SortedOverlapCircleNonAlloc(position, radius, _overlapColliders2D, layerMask) :
-                Physics2D.OverlapCircleNonAlloc(position, radius, _overlapColliders2D, layerMask);
+                Physics2D.OverlapCircle(position, radius, PhysicUtils.CreateContactFilter2D(layerMask), _overlapColliders2D);
         }
 
         public bool GetRaycastIsTrigger(int index) => _raycasts2D[index].collider.isTrigger;

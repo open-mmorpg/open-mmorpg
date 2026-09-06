@@ -95,6 +95,10 @@ namespace MultiplayerARPG
         protected int passwordLength = 6;
         public int PasswordLength { get { return passwordLength; } }
 
+        [SerializeField]
+        protected bool canUseByCreatorOnly = false;
+        public bool CanUseByCreatorOnly { get { return canUseByCreatorOnly; } }
+
         [Category("Events")]
         [SerializeField]
         protected UnityEvent onBuildingDestroy = new UnityEvent();
@@ -254,9 +258,9 @@ namespace MultiplayerARPG
         protected readonly HashSet<GameObject> _triggerObjects = new HashSet<GameObject>();
         protected readonly HashSet<BuildingEntity> _children = new HashSet<BuildingEntity>();
         protected readonly HashSet<BuildingMaterial> _buildingMaterials = new HashSet<BuildingMaterial>();
-        protected int _lastAddedTriggerObjectFrame;
+        protected int _lastAddedTriggerObjectFrame = 0;
         protected bool _parentFound = true; // No parent by default
-        protected bool _isDestroyed;
+        protected bool _isDestroyed = false;
 
         protected override void EntityAwake()
         {
@@ -639,7 +643,7 @@ namespace MultiplayerARPG
                 // Use rigidbody to detect trigger events
                 Rigidbody2D rigidbody = collider.gameObject.GetOrAddComponent<Rigidbody2D>();
                 rigidbody.gravityScale = 0;
-                rigidbody.isKinematic = true;
+                rigidbody.bodyType = RigidbodyType2D.Kinematic;
                 rigidbody.constraints = RigidbodyConstraints2D.FreezeAll;
             }
             IsBuildMode = true;

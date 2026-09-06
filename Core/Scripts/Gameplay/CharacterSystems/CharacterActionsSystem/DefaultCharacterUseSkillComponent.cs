@@ -190,7 +190,7 @@ namespace MultiplayerARPG
             MovementRestrictionWhileUsingSkill = skill.movementRestrictionWhileUsingSkill;
 
             // Get play speed multiplier will use it to play animation faster or slower based on attack speed stats
-            animSpeedRate *= Entity.GetAnimSpeedRate(AnimActionType);
+            animSpeedRate = Mathf.Clamp(animSpeedRate, 0.1f, animSpeedRate);
 
             // Set doing action data
             IsCastingSkillCanBeInterrupted = skill.canBeInterruptedWhileCasting;

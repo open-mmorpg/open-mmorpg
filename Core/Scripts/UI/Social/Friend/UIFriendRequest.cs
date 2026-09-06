@@ -43,7 +43,7 @@ namespace MultiplayerARPG
                 limit = 50,
             }, GetFriendRequestsCallback);
             // Update notification count
-            UIFriendRequestNotification[] notifications = FindObjectsOfType<UIFriendRequestNotification>();
+            UIFriendRequestNotification[] notifications = FindObjectsByType<UIFriendRequestNotification>(UnityEngine.FindObjectsSortMode.None);
             for (int i = 0; i < notifications.Length; ++i)
             {
                 notifications[i].Refresh();

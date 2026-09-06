@@ -216,7 +216,7 @@ namespace MultiplayerARPG
             _isServerReadyToInstantiateObjects = false;
             _isClientReadyToInstantiateObjects = false;
             _isServerReadyToInstantiatePlayers = false;
-            GameInstance.JoinedGuild = null;
+            GameInstance.JoinedParty = null;
             GameInstance.JoinedGuild = null;
             PoolSystem.Clear();
             ClientBankActions.Clean();
@@ -660,19 +660,11 @@ namespace MultiplayerARPG
             NetDataWriter reliableWriter = EntityMovementDataBuffers.ReliablePacketWriter;
             NetDataWriter unreliableWriter = EntityMovementDataBuffers.UnreliablePacketWriter;
 
-            // Prepare packets
-            TransportHandler.WritePacket(reliableWriter, GameNetworkingConsts.EntityState);
-            reliableWriter.PutPackedLong(writeTimestamp);
-            int posBeforeWriteReliableStateCount = reliableWriter.Length;
-            int reliableStateCount = 0;
-            reliableWriter.Put(reliableStateCount);
-
-            TransportHandler.WritePacket(unreliableWriter, GameNetworkingConsts.EntityState);
-            unreliableWriter.PutPackedLong(writeTimestamp);
-            int posBeforeWriteUnreliableStateCount = unreliableWriter.Length;
-            int unreliableStateCount = 0;
-            unreliableWriter.Put(unreliableStateCount);
-            int posAfterWriteUnreliableStateCount = unreliableWriter.Length;
+            int posBeforeWriteReliableStateCount;
+            int reliableStateCount;
+            int posBeforeWriteUnreliableStateCount;
+            int unreliableStateCount;
+            int posAfterWriteUnreliableStateCount;
 
             int tempLastPosition;
 
@@ -682,6 +674,21 @@ namespace MultiplayerARPG
                     continue;
 
                 LiteNetLibPlayer player = playerKvp.Value;
+
+                // Prepare packets per player: WritePacket resets the shared writers, so each
+                // player gets a fresh header and counters instead of accumulating prior players' states.
+                TransportHandler.WritePacket(reliableWriter, GameNetworkingConsts.EntityState);
+                reliableWriter.PutPackedLong(writeTimestamp);
+                posBeforeWriteReliableStateCount = reliableWriter.Length;
+                reliableStateCount = 0;
+                reliableWriter.Put(reliableStateCount);
+
+                TransportHandler.WritePacket(unreliableWriter, GameNetworkingConsts.EntityState);
+                unreliableWriter.PutPackedLong(writeTimestamp);
+                posBeforeWriteUnreliableStateCount = unreliableWriter.Length;
+                unreliableStateCount = 0;
+                unreliableWriter.Put(unreliableStateCount);
+                posAfterWriteUnreliableStateCount = unreliableWriter.Length;
                 var objectIds = player.GetSubscribingObjectIds();
                 while (objectIds.MoveNext())
                 {
@@ -759,19 +766,11 @@ namespace MultiplayerARPG
             NetDataWriter reliableWriter = EntityMovementDataBuffers.ReliablePacketWriter;
             NetDataWriter unreliableWriter = EntityMovementDataBuffers.UnreliablePacketWriter;
 
-            // Prepare packets
-            TransportHandler.WritePacket(reliableWriter, GameNetworkingConsts.EntityState);
-            reliableWriter.PutPackedLong(writeTimestamp);
-            int posBeforeWriteReliableStateCount = reliableWriter.Length;
-            int reliableStateCount = 0;
-            reliableWriter.Put(reliableStateCount);
-
-            TransportHandler.WritePacket(unreliableWriter, GameNetworkingConsts.EntityState);
-            unreliableWriter.PutPackedLong(writeTimestamp);
-            int posBeforeWriteUnreliableStateCount = unreliableWriter.Length;
-            int unreliableStateCount = 0;
-            unreliableWriter.Put(unreliableStateCount);
-            int posAfterWriteUnreliableStateCount = unreliableWriter.Length;
+            int posBeforeWriteReliableStateCount;
+            int reliableStateCount;
+            int posBeforeWriteUnreliableStateCount;
+            int unreliableStateCount;
+            int posAfterWriteUnreliableStateCount;
 
             int tempLastPosition;
 
@@ -789,6 +788,21 @@ namespace MultiplayerARPG
                 //Try get position for interest management, it will be used for determining data compression mode, but it's not required, so it won't cause problem if failed to get position
                 if (!DefaultServerUserHandlers.PlayerCharacters.TryGetValue(player.ConnectionId, out IPlayerCharacterData playerCharacter))
                     continue;
+
+                // Prepare packets per player: WritePacket resets the shared writers, so each
+                // player gets a fresh header and counters instead of accumulating prior players' states.
+                TransportHandler.WritePacket(reliableWriter, GameNetworkingConsts.EntityState);
+                reliableWriter.PutPackedLong(writeTimestamp);
+                posBeforeWriteReliableStateCount = reliableWriter.Length;
+                reliableStateCount = 0;
+                reliableWriter.Put(reliableStateCount);
+
+                TransportHandler.WritePacket(unreliableWriter, GameNetworkingConsts.EntityState);
+                unreliableWriter.PutPackedLong(writeTimestamp);
+                posBeforeWriteUnreliableStateCount = unreliableWriter.Length;
+                unreliableStateCount = 0;
+                unreliableWriter.Put(unreliableStateCount);
+                posAfterWriteUnreliableStateCount = unreliableWriter.Length;
 
                 //HashSet<uint> objectIds = player.GetSubscribingObjectIds();
                 //DG fix
@@ -1074,19 +1088,19 @@ namespace MultiplayerARPG
 
         private void RegisterEntities()
         {
-            MonsterSpawnArea[] monsterSpawnAreas = FindObjectsOfType<MonsterSpawnArea>();
+            MonsterSpawnArea[] monsterSpawnAreas = FindObjectsByType<MonsterSpawnArea>(FindObjectsSortMode.InstanceID);
             foreach (MonsterSpawnArea monsterSpawnArea in monsterSpawnAreas)
             {
                 monsterSpawnArea.RegisterPrefabs();
             }
 
-            HarvestableSpawnArea[] harvestableSpawnAreas = FindObjectsOfType<HarvestableSpawnArea>();
+            HarvestableSpawnArea[] harvestableSpawnAreas = FindObjectsByType<HarvestableSpawnArea>(FindObjectsSortMode.InstanceID);
             foreach (HarvestableSpawnArea harvestableSpawnArea in harvestableSpawnAreas)
             {
                 harvestableSpawnArea.RegisterPrefabs();
             }
 
-            ItemDropSpawnArea[] itemDropSpawnAreas = FindObjectsOfType<ItemDropSpawnArea>();
+            ItemDropSpawnArea[] itemDropSpawnAreas = FindObjectsByType<ItemDropSpawnArea>(FindObjectsSortMode.InstanceID);
             foreach (ItemDropSpawnArea itemDropSpawnArea in itemDropSpawnAreas)
             {
                 itemDropSpawnArea.RegisterPrefabs();
@@ -1094,9 +1108,9 @@ namespace MultiplayerARPG
 
             // Register scene entities
 #if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
-            GameInstance.AddMonsterCharacterEntities(FindObjectsOfType<BaseMonsterCharacterEntity>());
-            GameInstance.AddHarvestableEntities(FindObjectsOfType<HarvestableEntity>());
-            GameInstance.AddItemDropEntities(FindObjectsOfType<ItemDropEntity>());
+            GameInstance.AddMonsterCharacterEntities(FindObjectsByType<BaseMonsterCharacterEntity>(FindObjectsSortMode.InstanceID));
+            GameInstance.AddHarvestableEntities(FindObjectsByType<HarvestableEntity>(FindObjectsSortMode.InstanceID));
+            GameInstance.AddItemDropEntities(FindObjectsByType<ItemDropEntity>(FindObjectsSortMode.InstanceID));
 #endif
 
             PoolSystem.Clear();

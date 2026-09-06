@@ -80,7 +80,7 @@ namespace Insthync.GraphicSettings
         {
             CurrentSetting = setting;
             bool enabled = setting == Setting.On;
-            Volume[] volumes = FindObjectsOfType<Volume>();
+            Volume[] volumes = FindObjectsByType<Volume>(FindObjectsSortMode.None);
             foreach (Volume volume in volumes)
             {
                 volume.enabled = enabled;

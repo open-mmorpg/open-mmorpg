@@ -8,6 +8,8 @@ using UnityEngine.Serialization;
 namespace MultiplayerARPG
 {
     [RequireComponent(typeof(CharacterController))]
+    [RequireComponent(typeof(CapsuleCollider))]
+    [RequireComponent(typeof(Rigidbody))]
     public partial class CharacterControllerEntityMovement : BaseNetworkedGameEntityComponent<BaseGameEntity>, IEntityMovementComponent, IBuiltInEntityMovement3D, IManagedUpdate, IManagedLateUpdate
     {
         /// <summary>
@@ -147,6 +149,32 @@ namespace MultiplayerARPG
             }
             private set => _cacheCharacterController = value;
         }
+        protected CapsuleCollider _cacheCapsuleCollider;
+        public CapsuleCollider CacheCapsuleCollider
+        {
+            get
+            {
+#if UNITY_EDITOR
+                if (!Application.isPlaying && _cacheCapsuleCollider == null)
+                    _cacheCapsuleCollider = GetComponent<CapsuleCollider>();
+#endif
+                return _cacheCapsuleCollider;
+            }
+            private set => _cacheCapsuleCollider = value;
+        }
+        protected Rigidbody _cacheRigidbody;
+        public Rigidbody CacheRigidbody
+        {
+            get
+            {
+#if UNITY_EDITOR
+                if (!Application.isPlaying && _cacheRigidbody == null)
+                    _cacheRigidbody = GetComponent<Rigidbody>();
+#endif
+                return _cacheRigidbody;
+            }
+            private set => _cacheRigidbody = value;
+        }
         public BuiltInEntityMovementFunctions3D Functions { get; private set; }
         public MovementColliderAdjustment ColliderAdjustment { get; private set; }
 
@@ -161,6 +189,8 @@ namespace MultiplayerARPG
         protected float _forceUngroundCountdown = 0f;
         protected int _allowToJumpOrDashCheckFrame = 0;
         protected bool _isAllowToJumpOrDash = true;
+        protected bool _isMovementBoundsDirty = true;
+        protected Bounds _movementBounds;
 
         protected virtual void Awake()
         {
@@ -170,6 +200,16 @@ namespace MultiplayerARPG
                 CacheAnimator = GetComponentInChildren<Animator>();
             // Prepare character controller component
             CacheCharacterController = gameObject.GetOrAddComponent<CharacterController>();
+            // Prepare capsule collider component
+            CacheCapsuleCollider = gameObject.GetOrAddComponent<CapsuleCollider>();
+            CacheCapsuleCollider.isTrigger = true;
+            CacheCapsuleCollider.radius = CacheCharacterController.radius;
+            CacheCapsuleCollider.height = CacheCharacterController.height;
+            CacheCapsuleCollider.center = CacheCharacterController.center;
+            // Prepare rigidbody component
+            CacheRigidbody = gameObject.GetOrAddComponent<Rigidbody>();
+            CacheRigidbody.useGravity = false;
+            CacheRigidbody.isKinematic = true;
             if (skinWidthAdjustTarget != null)
                 skinWidthAdjustTarget.localPosition = Vector3.zero;
             ColliderAdjustment = gameObject.GetComponent<MovementColliderAdjustment>();
@@ -249,14 +289,22 @@ namespace MultiplayerARPG
             Functions.EntityStart();
         }
 
+        public override void OnSetOwnerClient(bool isOwnerClient)
+        {
+            Functions.OnSetOwnerClient(isOwnerClient);
+            CacheCharacterController.enabled = Functions.CanSimulateMovement();
+        }
+
         private void OnEnable()
         {
             Functions.ComponentEnabled();
+            CacheCharacterController.enabled = Functions.CanSimulateMovement();
             UpdateManager.Register(this);
         }
 
         private void OnDisable()
         {
+            CacheCharacterController.enabled = false;
             UpdateManager.Unregister(this);
         }
 
@@ -268,11 +316,6 @@ namespace MultiplayerARPG
         public override void OnNetworkDestroy(byte reasons)
         {
             Functions.OnNetworkDestroy(reasons);
-        }
-
-        public override void OnSetOwnerClient(bool isOwnerClient)
-        {
-            Functions.OnSetOwnerClient(isOwnerClient);
         }
 
         private void OnAnimatorMove()
@@ -350,7 +393,10 @@ namespace MultiplayerARPG
             Functions.snapThreshold = snapThreshold;
 #endif
             float deltaTime = Time.deltaTime;
-            Functions.UpdateMovement(deltaTime);
+            if (!Functions.CanSimulateMovement())
+                Functions.UpdateInterpolate(deltaTime);
+            else
+                Functions.UpdateMovement(deltaTime);
             Functions.UpdateRotation(deltaTime);
             Functions.AfterMovementUpdate(deltaTime);
             if (_forceUngroundCountdown > 0f)
@@ -362,7 +408,10 @@ namespace MultiplayerARPG
             float deltaTime = Time.deltaTime;
             Functions.FixSwimUpPosition(deltaTime);
             if (skinWidthAdjustTarget != null)
-                skinWidthAdjustTarget.localPosition = CacheCharacterController.enabled ? -CacheCharacterController.skinWidth * Vector3.up : Vector3.zero;
+                skinWidthAdjustTarget.localPosition = -CacheCharacterController.skinWidth * Vector3.up;
+            CacheCapsuleCollider.radius = CacheCharacterController.radius;
+            CacheCapsuleCollider.height = CacheCharacterController.height;
+            CacheCapsuleCollider.center = CacheCharacterController.center;
         }
 
         public bool GroundCheck()
@@ -451,19 +500,50 @@ namespace MultiplayerARPG
 
         public void SetPosition(Vector3 position)
         {
+            bool preChangedEnabled = CacheCharacterController.enabled;
             CacheCharacterController.enabled = false;
             EntityTransform.position = position;
-            CacheCharacterController.enabled = true;
+            CacheCharacterController.enabled = preChangedEnabled;
+        }
+
+        public void MarkMovementBoundsDirty()
+        {
+            _isMovementBoundsDirty = true;
         }
 
         public Bounds GetMovementBounds()
         {
-            return CacheCharacterController.bounds;
+            if (_isMovementBoundsDirty)
+            {
+                Vector3 scale = EntityTransform.lossyScale;
+
+                float horizontalScale = Mathf.Max(
+                    Mathf.Abs(scale.x),
+                    Mathf.Abs(scale.z));
+
+                float diameter =
+                    CacheCharacterController.radius * horizontalScale * 2f;
+
+                float height =
+                    CacheCharacterController.height * Mathf.Abs(scale.y);
+
+                _movementBounds = new Bounds(
+                    EntityTransform.TransformPoint(CacheCharacterController.center),
+                    new Vector3(diameter, height, diameter));
+            }
+            return _movementBounds;
         }
 
         public void Move(MovementState movementState, ExtraMovementState extraMovementState, Vector3 motion, float deltaTime)
         {
-            CacheCharacterController.Move(AdjustCrawlMotion(movementState, extraMovementState, motion));
+            if (CacheCharacterController.enabled)
+            {
+                CacheCharacterController.Move(AdjustCrawlMotion(movementState, extraMovementState, motion));
+            }
+            else
+            {
+                EntityTransform.position += motion;
+            }
         }
 
         public void RotateY(float yAngle)
@@ -543,7 +623,7 @@ namespace MultiplayerARPG
 
         public Vector3 GetSnapToGroundMotion(Vector3 motion, Vector3 platformMotion, Vector3 forceMotion)
         {
-            if (Functions.IsUnderWater || _forceUngroundCountdown > 0f || motion.y > 0f)
+            if (!Functions.CanSimulateMovement() || Functions.IsUnderWater || _forceUngroundCountdown > 0f || motion.y > 0f)
                 return Vector3.zero;
 
             if (Physics.Raycast(EntityTransform.position + (Vector3.down * CacheCharacterController.skinWidth), Vector3.down, out RaycastHit hit, groundSnapDistance, GameInstance.Singleton.GetGameEntityGroundDetectionLayerMask(), QueryTriggerInteraction.Ignore) && hit.normal != Vector3.up)

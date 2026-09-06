@@ -175,9 +175,11 @@ namespace MultiplayerARPG
         private bool _acceptedJump;
         private bool _acceptedDash;
         private long _acceptedPositionTimestamp;
+        private Vector3 _startInterpPosition;
+        private Vector3 _endInterpPosition;
+        private float _interpElapsedTime;
 
         // Server validate codes
-        private Vector3? _acceptedPosition = null;
         private float _accumulateDeltaTime = 0f;
         private float _accumulateDiffHorMoveDist = 0f;
         private float _accumulateDiffVerMoveDist = 0f;
@@ -232,6 +234,17 @@ namespace MultiplayerARPG
         {
             NavPaths = null;
             _simulatingKeyMovement = false;
+        }
+
+        public bool CanSimulateMovement()
+        {
+            switch (movementSecure)
+            {
+                case MovementSecure.ServerAuthoritative:
+                    return IsServer || IsOwnerClientOrOwnedByServer;
+                default:
+                    return IsOwnerClientOrOwnedByServer;
+            }
         }
 
         public void OnAnimatorMove()
@@ -357,7 +370,6 @@ namespace MultiplayerARPG
                 return;
             if (IsServer && !IsOwnerClientOrOwnedByServer)
                 _isServerWaitingTeleportConfirm = true;
-            _acceptedPosition = position;
             _isTeleporting = true;
             _stillMoveAfterTeleport = stillMoveAfterTeleport;
             if (TeleportPreparer != null)
@@ -446,6 +458,34 @@ namespace MultiplayerARPG
             float surfaceY = _waterCollider.bounds.max.y;
             point = new Vector3(EntityTransform.position.x, surfaceY, EntityTransform.position.z);
             return true;
+        }
+
+        public void UpdateInterpolate(float deltaTime)
+        {
+            if (_acceptedJump)
+            {
+                if (IsServer)
+                    _sendingJump = true;
+                Entity.PlayJumpAnimation();
+            }
+
+            if (_acceptedDash)
+            {
+                if (IsServer)
+                    _sendingDash = true;
+            }
+
+            if (IsServer && _isServerWaitingTeleportConfirm)
+            {
+                return;
+            }
+
+            if (_acceptedPositionTimestamp > 0)
+            {
+                _interpElapsedTime += deltaTime;
+                Vector3 newPosition = Vector3.Lerp(_startInterpPosition, _endInterpPosition, _interpElapsedTime / Entity.Manager.LogicUpdater.DeltaTimeF);
+                EntityMovement.SetPosition(newPosition);
+            }
         }
 
         public void UpdateMovement(float deltaTime)
@@ -1384,6 +1424,8 @@ namespace MultiplayerARPG
                     }
                     MovementState = _tempMovementState = movementState;
                     ExtraMovementState = _tempExtraMovementState = extraMovementState;
+                    _startInterpPosition = position;
+                    _endInterpPosition = position;
                 }
                 else if (!IsOwnerClient)
                 {
@@ -1395,8 +1437,11 @@ namespace MultiplayerARPG
                         NavPaths = null;
                     MovementState = _tempMovementState = movementState;
                     ExtraMovementState = _tempExtraMovementState = extraMovementState;
+                    _startInterpPosition = EntityTransform.position;
+                    _endInterpPosition = position;
                 }
                 _acceptedPositionTimestamp = peerTimestamp;
+                _interpElapsedTime = 0f;
             }
             if (!IsOwnerClient && movementState.Has(MovementState.IsJump))
             {
@@ -1524,7 +1569,7 @@ namespace MultiplayerARPG
             MovementState = _tempMovementState = movementState;
             ExtraMovementState = _tempExtraMovementState = extraMovementState;
             // Prepare data for validation
-            Vector3 oldPos = _acceptedPosition.HasValue ? _acceptedPosition.Value : EntityTransform.position;
+            Vector3 oldPos = _acceptedPositionTimestamp > 0 ? _endInterpPosition : EntityTransform.position;
             Vector3 newPos = position;
             bool falling = newPos.y < oldPos.y;
             // Calculate moveable distance
@@ -1556,7 +1601,6 @@ namespace MultiplayerARPG
                     newPos.x = oldPos.x;
                     newPos.z = oldPos.z;
                 }
-                _acceptedPosition = newPos;
             }
             else
             {
@@ -1564,7 +1608,6 @@ namespace MultiplayerARPG
                 if (!IsClient)
                 {
                     // Allow to move to the position
-                    _acceptedPosition = newPos;
                     EntityMovement.SetPosition(newPos);
                     // Update character rotation
                     RemoteTurnSimulation(true, yAngle, unityDeltaTime);
@@ -1574,7 +1617,6 @@ namespace MultiplayerARPG
                     // It's both server and client, simulate movement
                     if (Vector3.Distance(newPos, oldPos) > MIN_DISTANCE_TO_SIMULATE_MOVEMENT)
                     {
-                        _acceptedPosition = newPos;
                         _simulatingKeyMovement = true;
                         SetMovePaths(newPos, false);
                     }
@@ -1591,6 +1633,9 @@ namespace MultiplayerARPG
                 }
             }
             _acceptedPositionTimestamp = peerTimestamp;
+            _startInterpPosition = oldPos;
+            _endInterpPosition = newPos;
+            _interpElapsedTime = 0f;
         }
 
         protected virtual Vector3 GetMoveablePosition(Vector3 oldPos, Vector3 newPos, bool falling, float clientHorMoveDist, float horMoveableDist, float clientVerMoveDist, float verMoveableDist)

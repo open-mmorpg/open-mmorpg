@@ -41,7 +41,7 @@ namespace Insthync.AudioManager
                 tempCustomIdTags[customIdTag.tag] = customIdTag.id;
             }
             AudioSourceSetterWithoutControls tempComp;
-            AudioSource[] sources = FindObjectsOfType<AudioSource>(true);
+            AudioSource[] sources = FindObjectsByType<AudioSource>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (AudioSource source in sources)
             {
                 tempComp = source.gameObject.GetComponent<AudioSourceSetterWithoutControls>();

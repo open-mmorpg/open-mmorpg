@@ -45,7 +45,7 @@ namespace MultiplayerARPG
             JobHandle handle = RaycastCommand.ScheduleBatch(tempCommands, _raycastResults, 1, 1);
             handle.Complete();
             tempCommands.Dispose();
-            if (_raycastResults[0].colliderInstanceID != 0)
+            if (_raycastResults[0].colliderEntityId != EntityId.None)
             {
                 result.point = _raycastResults[0].point;
                 result.normal = _raycastResults[0].normal;
@@ -78,7 +78,7 @@ namespace MultiplayerARPG
             int length = _allocSize;
             for (int i = 0; i < _raycastResults.Length; ++i)
             {
-                if (_raycastResults[i].colliderInstanceID == 0)
+                if (_raycastResults[i].colliderEntityId == EntityId.None)
                 {
                     length = i;
                     break;

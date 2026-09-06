@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
+using UnityEditor.Build;
 
 namespace MultiplayerARPG
 {
@@ -53,7 +54,7 @@ namespace MultiplayerARPG
         }
 
         [MenuItem(EditorMenuConsts.BUILD_SETUP_ENABLE_ADDRESSABLES_MENU, false, EditorMenuConsts.BUILD_SETUP_ENABLE_ADDRESSABLES_ORDER)]
-        public static void BuildSetupEnaableAddressables()
+        public static void BuildSetupEnableAddressables()
         {
             RemoveFromDefines("DISABLE_ADDRESSABLES");
             EditorUtility.DisplayDialog("Scripting Define Symbols Setup", "Scripting Define Symbols setup for addressables enabling is done, you will have wait a bit for compiling", "Ok");
@@ -67,7 +68,7 @@ namespace MultiplayerARPG
                 projectDefines.Add(symbol);
             string newDefines = string.Join(";", projectDefines.ToArray());
             if (previousProjectDefines != newDefines)
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, newDefines);
+                PlayerSettings.SetScriptingDefineSymbols(NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup), newDefines);
         }
 
         public static void RemoveFromDefines(string symbol)
@@ -78,7 +79,7 @@ namespace MultiplayerARPG
                 projectDefines.Remove(symbol);
             string newDefines = string.Join(";", projectDefines.ToArray());
             if (previousProjectDefines != newDefines)
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, newDefines);
+                PlayerSettings.SetScriptingDefineSymbols(NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup), newDefines);
         }
 
         private static string GetCurrentProjectDefines(out BuildTargetGroup buildTargetGroup)
@@ -90,7 +91,7 @@ namespace MultiplayerARPG
                 if (propertyInfo != null)
                     buildTargetGroup = (BuildTargetGroup)propertyInfo.GetValue(null, null);
             }
-            return PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
+            return PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup));
         }
     }
 }

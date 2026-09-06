@@ -13,8 +13,13 @@ namespace MultiplayerARPG
 
         public static IBaseGridManagerComponenent Instance { get; private set; }
 
+        // Disabled by default: the quantized grid path clamps world X/Z to +/-(gridSize * cellSize / 2)
+        // (+/-960 with the defaults) and Y to [0, cellSize), which breaks any map outside that box.
+        // This component is added at runtime via GetOrAddComponent and is not serialized in any
+        // scene or prefab, so this default applies identically to all servers and clients.
+        // Re-enable only after the grid/quantizer rework (Phase 3) lands.
         [SerializeField]
-        private bool isDisabled = false;
+        private bool isDisabled = true;
         public bool IsDisabled => isDisabled;
 
         [SerializeField]

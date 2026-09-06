@@ -63,7 +63,9 @@ namespace MultiplayerARPG
 
                 int totalBits = bx + by + bz;
 
-                int byteCount = (totalBits + 7) / 8;
+                // +2 for the compression mode bits stored in the top of the first byte,
+                // otherwise the highest 2 bits of Y are dropped in every mode.
+                int byteCount = (totalBits + 2 + 7) / 8;
 
                 // convert mode (3–6 → 0–3)
                 int modeBits = compressionMode - 3;
@@ -76,6 +78,7 @@ namespace MultiplayerARPG
                 movementResults.Add(new MovementResult
                 {
                     objectId = objectId,
+                    reliably = entity.shouldSendReliably,
                     movementState = entity.movementState,
                     extraMovementState = entity.extraMovementState,
                     compressionMode = first,

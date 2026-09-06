@@ -282,7 +282,6 @@ namespace Insthync.CameraAndInput
                 case Key.OEM3: return KeyCode.None; // Unknow.
                 case Key.OEM4: return KeyCode.None; // Unknow.
                 case Key.OEM5: return KeyCode.None; // Unknow.
-                case Key.IMESelected: return KeyCode.None; // Unknow.
                 default: return KeyCode.None; // Unknow.
             }
         }
