@@ -2,9 +2,9 @@
 
 ![image](Resources/OpenMMORPG.png)
 
-**Open MMORPG** is a free, open-source distribution of [MMORPG Kit](https://github.com/suriyun-mmorpg/UnityMultiplayerARPG_Core). After the original asset was removed from the Unity Asset Store, Ittipon Teerapruettikulchai ([insthync](https://github.com/insthync)) open sourced his work, and [MmoKitCE](https://github.com/denariigames/MmoKitCE) was created to preserve, improve, and evolve it. Open MMORPG continues that work, with the blessing of the MmoKitCE author, under a new name and with a new goal: publishing the kit as a **free asset on the Unity Asset Store**.
+**Open MMORPG** is a free, open-source distribution of [MMORPG Kit](https://github.com/suriyun-mmorpg/UnityMultiplayerARPG_Core). After the original asset was removed from the Unity Asset Store, Ittipon Teerapruettikulchai ([insthync](https://github.com/insthync)) open sourced his work. Open MMORPG continues that work, with the blessing of the MmoKitCE author, under a new name and with a new goal: publishing the kit as a **free asset on the Unity Asset Store**.
 
-Open MMORPG will keep pulling improvements and fixes from the original core repos and from MmoKitCE into this distribution where it makes sense.
+Open MMORPG will keep pulling improvements and fixes from the original core repos where it makes sense.
 
 ### The Three S's Guiding Principle
 
