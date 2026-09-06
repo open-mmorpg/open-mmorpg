@@ -12,7 +12,7 @@ using UnityEngine.Networking;
 using System;
 using System.Collections.Generic;
 
-namespace MmoKitCE.AddonManager
+namespace OpenMMORPG.AddonManager
 {
     public partial class AddonManagerWindow
     {
@@ -397,7 +397,7 @@ namespace MmoKitCE.AddonManager
 				GUILayout.Label("Welcome to Addon Manager", HeaderStyle);
 
 				string welcomeMessage = 
-					"MmoKitCE Addon Manager collects completely anonymous usage statistics (addon downloads) to highlight the most popular addons in the community.\n\n" +
+					"OpenMMORPG Addon Manager collects completely anonymous usage statistics (addon downloads) to highlight the most popular addons in the community.\n\n" +
 					"No personal or project data is ever collected or transmitted.\n\n" +
 					"Help the community discover the best addons!";
 				welcomeMessage.Replace("\\n\\n", "\n\n");
@@ -408,7 +408,7 @@ namespace MmoKitCE.AddonManager
 				EditorGUILayout.BeginHorizontal();
 				bool newToggle = EditorGUILayout.Toggle(analyticsToggle, GUILayout.Width(20));
 				EditorGUILayout.LabelField(
-					"Help improve MmoKitCE Addon Manager by sending anonymous usage data",
+					"Help improve OpenMMORPG Addon Manager by sending anonymous usage data",
 					EditorStyles.wordWrappedLabel,
 					GUILayout.ExpandWidth(true)
 				);

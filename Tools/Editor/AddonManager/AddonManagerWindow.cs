@@ -9,7 +9,7 @@ using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MmoKitCE.AddonManager
+namespace OpenMMORPG.AddonManager
 {
 	public static class Constants
 	{
@@ -56,12 +56,12 @@ namespace MmoKitCE.AddonManager
     public partial class AddonManagerWindow : EditorWindow
     {
 		private const string PACKAGE_MANIFEST_URL = "https://raw.githubusercontent.com/denariigames/mmokitce-addon-manager/refs/heads/master/manifest.json";
-		private const string ADDON_FOLDER = "Assets/MmoKitCE_addons/";
+		private const string ADDON_FOLDER = "Assets/OpenMMORPG_addons/";
 
 		private List<PackageInfo> packages = new List<PackageInfo>();
 		private PackageInfo selectedPackage = null;
 
-		[MenuItem("Tools/MmoKitCE/Develop/Addon Manager", false, -1000)]
+		[MenuItem("Tools/OpenMMORPG/Develop/Addon Manager", false, -1000)]
 		public static void ShowWindow()
 		{
 			GetWindow<AddonManagerWindow>("Addon Manager");
@@ -81,7 +81,7 @@ namespace MmoKitCE.AddonManager
 		private void OnEnable()
 		{
 			//Load textures
-			logoIcon = Resources.Load<Texture2D>("MmoKitCE");
+			logoIcon = Resources.Load<Texture2D>("OpenMMORPG");
 			checkIcon = Resources.Load<Texture2D>("CheckIcon");
 			updateIcon = Resources.Load<Texture2D>("UpdateIcon");
 			reloadIcon = Resources.Load<Texture2D>("ReloadIcon");

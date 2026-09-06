@@ -14,7 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 
-namespace MmoKitCE.AddonManager
+namespace OpenMMORPG.AddonManager
 {
 	public static class AddonAnalytics
 	{

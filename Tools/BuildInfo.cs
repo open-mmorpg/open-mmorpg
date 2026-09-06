@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "MmoKitCE/Tools/BuildInfo", fileName = "BuildInfo")]
+[CreateAssetMenu(menuName = "OpenMMORPG/Tools/BuildInfo", fileName = "BuildInfo")]
 public class BuildInfo : ScriptableObject
 {
     [Tooltip("Current version shown to players")]

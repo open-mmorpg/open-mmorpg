@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using System.IO;
 using UnityEngine.Networking;
 
-namespace MmoKitCE.AddonManager
+namespace OpenMMORPG.AddonManager
 {
 	public static class AddonInstallState
 	{

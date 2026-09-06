@@ -1,8 +1,8 @@
-# MmoKitCE Addon Manager
+# OpenMMORPG Addon Manager
 
 <img width="64" height="64" alt="image" src="https://raw.githubusercontent.com/denariigames/mmokitce-addon-manager/refs/heads/master/images/LogoIcon.png" />
 
-**Addon Manager** is a custom Unity Editor window designed for [**MmoKitCE**](https://github.com/denariigames/MmoKitCE) that provides a clean, professional interface for discovering, installing, and managing addons.
+**Addon Manager** is a custom Unity Editor window designed for [**OpenMMORPG**](https://github.com/open-mmorpg/open-mmorpg) that provides a clean, professional interface for discovering, installing, and managing addons.
 
 It functions as a private, curated "addon marketplace" directly inside the Unity Editor, making it easy to browse and install community or official addons without leaving your project.
 
@@ -22,10 +22,10 @@ It functions as a private, curated "addon marketplace" directly inside the Unity
   - Recency (Anytime, This week <img width="16" height="16" alt="image" src="https://raw.githubusercontent.com/denariigames/mmokitce-addon-manager/refs/heads/master/images/NewBadge.png" />, This month)
 
 - **Clean Project Structure**
-  - Addons saved to MmoKitCE_addons folder, organized by category
+  - Addons saved to OpenMMORPG_addons folder, organized by category
 
 - **Opt-In Analytics**
-  - MmoKitCE Addon Manager collects completely anonymous usage statistics (addon downloads) to highlight the most popular addons in the community. No personal or project data is ever collected or transmitted.
+  - OpenMMORPG Addon Manager collects completely anonymous usage statistics (addon downloads) to highlight the most popular addons in the community. No personal or project data is ever collected or transmitted.
 
 - **Dependency Management (WIP)**
   - Initial support for indicating if addon requires core patch or has other addon dependencies.
@@ -33,12 +33,12 @@ It functions as a private, curated "addon marketplace" directly inside the Unity
 ## Contributing Addons (Easy Way)
 
 **NEW**
-[Addon Packager](https://github.com/denariigames/mmokitce-addons/tree/master/AddonPackager) is a custom Unity Editor tool designed for MmoKitCE community contributions. It simplifies the process of packaging your addons by:
+[Addon Packager](https://github.com/denariigames/mmokitce-addons/tree/master/AddonPackager) is a custom Unity Editor tool designed for OpenMMORPG community contributions. It simplifies the process of packaging your addons by:
 
 - Exporting your addon folder as a .unitypackage with the required guid file
 - Automatically generating a properly formatted package.json manifest
 
-This makes it incredibly easy to share your addons with the MmoKitCE community. You can install Addon Packager directly from Addon Manager.
+This makes it incredibly easy to share your addons with the OpenMMORPG community. You can install Addon Packager directly from Addon Manager.
 
 ## Contributing Addons (Hard Way)
 
@@ -47,14 +47,14 @@ To prepare your addon:
 - Bundle your assets as a .unitypackage with a guid file (*do not include the Assets folder!*)
   - The guid file should have a filename unique to the project. We recommend [GuidGenerator](https://guidgenerator.com/) to create one.
   -  `touch your-guid-id` at the command line so there is no extension (Windows equivalent: `echo.> your-guid-id`).
-- Add a MmoKitCE compatible package.json with required fields (see below)
+- Add a OpenMMORPG compatible package.json with required fields (see below)
 - Host on a public github repository
 - Share your raw package.json URL on Discord
   - The raw URL links directly to the package.json content and should look like this: `https://raw.githubusercontent.com/<owner>/<repo>/refs/heads/main/package.json`
 
-### MmoKitCE Compatible package.json
+### OpenMMORPG Compatible package.json
 
-Each addon repository must have a MmoKitCE compatible package.json with these required fields:
+Each addon repository must have a OpenMMORPG compatible package.json with these required fields:
 
 - name (displayed in Addon Manager and used for addon folder name)
 - guid (must be unique to the project and match guid filename in the unitypackage)

@@ -1,12 +1,14 @@
-# MmoKitCE: A Unity MMO framework designed to scale, stay stable, and remain secure
+# Open MMORPG: A free, community-maintained Unity MMO framework
 
-![image](Resources/MmoKitCE.png)
+![image](Resources/OpenMMORPG.png)
 
-**MmoKitCE** is an _opinonated_ community edition distribution of [MMORPG Kit](https://github.com/suriyun-mmorpg/UnityMultiplayerARPG_Core). After the original asset was removed from the Unity Asset Store, Ittipon Teerapruettikulchai ([insthync](https://github.com/insthync)) open sourced his work. MmoKitCE exists to preserve, improve, and evolve this foundation, and will continue to pull improvements and fixes from his core repos into this distribution where it makes sense.
+**Open MMORPG** is a free, open-source distribution of [MMORPG Kit](https://github.com/suriyun-mmorpg/UnityMultiplayerARPG_Core). After the original asset was removed from the Unity Asset Store, Ittipon Teerapruettikulchai ([insthync](https://github.com/insthync)) open sourced his work, and [MmoKitCE](https://github.com/denariigames/MmoKitCE) was created to preserve, improve, and evolve it. Open MMORPG continues that work, with the blessing of the MmoKitCE author, under a new name and with a new goal: publishing the kit as a **free asset on the Unity Asset Store**.
+
+Open MMORPG will keep pulling improvements and fixes from the original core repos and from MmoKitCE into this distribution where it makes sense.
 
 ### The Three S's Guiding Principle
 
-Every change, fix, or removal in MmoKitCE is evaluated against these core goals:
+Every change, fix, or removal in Open MMORPG is evaluated against these core goals:
 
 - **Scalability**: Can the system handle hundreds or thousands of concurrent players?
 - **Stability**: Does it reduce bugs, crashes, edge cases, and unexpected behavior?
@@ -14,7 +16,7 @@ Every change, fix, or removal in MmoKitCE is evaluated against these core goals:
 
 **No other feature requests or enhancements** are considered unless they demonstrably advance one or more of these three goals. In fact, non-essential or problematic features may be **removed** or **moved to addons** if doing so improves any of the three S's.
 
-## What's New in CE
+## What's Included
 
 ### Addon Manager
 Addon Manager is an in-editor interface that allows the community and team to modularize functionality.
@@ -23,77 +25,79 @@ Addon Manager is an in-editor interface that allows the community and team to mo
 - Addons are discovered, installed, and updated directly inside Unity, similar to a private Unity Package Manager.
 - This keeps the **core distribution lean**, focused, and easier to maintain long-term.
 
-
 ### Login Manager
 Login Manager is a clean separation of login/authentication logic from the central game servers.
 
-- Impoved scalability: Concurrent login limit prevents the login server from being overwhelmed during spikes. The dedicated login server + cluster client allows independent scaling of auth traffic away from game logic.
-
+- Improved scalability: Concurrent login limit prevents the login server from being overwhelmed during spikes. The dedicated login server + cluster client allows independent scaling of auth traffic away from game logic.
 
 ### Sharded DatabaseNetworkManager
-Added lanes, queueing, deferred/throttled saves, and a working in-memory cache. 
+Added lanes, queueing, deferred/throttled saves, and a working in-memory cache.
 
 - Improved scalability: Vastly improved horizontal/concurrency scaling with sharded lanes + locks + ConcurrentDictionary support higher player counts and multi-threaded server ops without contention or overload. Limits (e.g., max saves/proceed) provide predictable load.
-
 
 ### Cell-Based Position Quantization
 Cell-based position quantization dramatically improves network efficiency for entity movement.
 
 - Improved scalability: Lower network traffic supports more concurrent players, higher update rates, and denser entity populations.
-- LOD based compression: Close entities (the ones the player actually interacts with) keep high-precision modes, while distance entities (the majority in large MMO worlds) now send position data in as little as 4 bytes.
+- LOD based compression: Close entities (the ones the player actually interacts with) keep high-precision modes, while distant entities (the majority in large MMO worlds) send position data in as little as 4 bytes.
 
 **World Size Assumptions:** The system uses a fixed square grid centered at the world origin. The maximum supported world size is determined by configurable CellSize. Positions outside the grid are clamped to edge cells.
-
 
 ### Jobs Movement Pipeline
 All entity movement data processing converted from monothreaded per-entity updates to Unity Jobs + Burst parallel processing.
 
 - Improved scalability: Combined with vector quantization and packed serialization, network payloads shrink dramatically, improving both server tick rate and bandwidth usage.
-addons without touching core networking code.
 
 ## Quick Start / Installation Wizard
 
-1. **Install package from git URL**
+Open MMORPG targets **Unity 6000.3** or newer.
 
-<img width="631" height="263" alt="install-package" src="https://github.com/user-attachments/assets/6e63c1d8-7f65-4b10-9bcc-8bca07cbfe5e" />
+1. **Install the package from a git URL**
 
 Open Window → **Package Manager** and click **Add package from git URL**
 ```
-https://github.com/denariigames/MmoKitCE_Installer.git
+https://github.com/open-mmorpg/open-mmorpg-installer.git
 ```
 
-2. **Run the Wizard to import Settings and Latest Release**
+2. **Run the Wizard to import Settings and the Latest Release**
 
-<img width="601" height="509" alt="Wizard" src="https://github.com/user-attachments/assets/4618edae-0372-45ad-a7f5-e49b59ad92dc" />
-
-A setup wizard will appear after the package is installed. If the Wizard does not appear or is inadventently closed, you can reopen at Window → Tools → MmoKitCE → Install → **Show Setup Wizard**
+A setup wizard will appear after the package is installed. If the Wizard does not appear or is inadvertently closed, you can reopen it at Tools → OpenMMORPG → Install → **Show Setup Wizard**
 
 Click **Import Settings** to install base project settings. The following settings will be overwritten by this process:
 
  - ProjectSettings/DynamicsManager.asset
  - ProjectSettings/InputManager.asset
- - ProjectSettings/Physics2DManager.asset
  - ProjectSettings/ProjectSettings.asset
  - ProjectSettings/QualitySettings.asset
  - ProjectSettings/TagManager.asset
  - ProjectSettings/TimeManager.asset
 
-The original Kit had additional settings which were not included in CE: AudioManager, EditorBuildSettings, EditorSettings, GraphicSettings, ShaderGraphSettings, UnityConnectSettings, VersionControlSettings
+Click **Import Open MMORPG** to install the latest release into `Assets/OpenMMORPG`.
 
-Click **Import MmoKitCE** to install the latest release.
-
-After installation, browse available addons via the Addon Manager window (Window → Tools → MmoKitCE → Develop → **Addon Manager**). Have fun building!
+After installation, browse available addons via the Addon Manager window (Tools → OpenMMORPG → Develop → **Addon Manager**). Have fun building!
 
 ## Yo! Where's the demo?
 
-MmoKitCE includes BaseDemo, a minimal implementation that is intended to demonstrate scene setup. There is no content in the BaseDemo. For a more robust, developer-focused demo with content, check the Addon Manager for TinyEpicDemo.
+A demo is not bundled with this release yet. For a developer-focused demo with content, check the Addon Manager for TinyEpicDemo.
 
+## Updating Open MMORPG
 
-## Updating MmoKitCE
+To update, update the package in the Package Manager and re-run the Wizard.
 
-To update CE, update the Package Manager and re-run Wizard.
+## Developing Open MMORPG
 
+The kit lives directly in your project's `Assets` folder, so you can work on it in place. Delete the imported `Assets/OpenMMORPG` directory and clone this repository in its place:
+
+```sh
+git clone https://github.com/open-mmorpg/open-mmorpg.git Assets/OpenMMORPG
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch model and how the kit is assembled from its source repositories.
+
+## License
+
+Open MMORPG is released under the [MIT License](LICENSE). Third-party components under `ThirdParty` carry their own licenses in their respective folders.
 
 ## Thanks
 
-Huge thanks to Ittipon Teerapruettikulchai for open sourcing the original kit. Without his act of generosity, none of this would exist. Special thanks to the entire community of former customers and new developers who continue to keep this ecosystem alive.
+Huge thanks to Ittipon Teerapruettikulchai for open sourcing the original kit, and to the MmoKitCE team at [Denarii Games](https://github.com/denariigames) for preserving and hardening it, and for blessing this continuation. Special thanks to the entire community of former customers and new developers who continue to keep this ecosystem alive.

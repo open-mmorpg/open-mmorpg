@@ -10,7 +10,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 
-namespace MmoKitCE.AddonManager
+namespace OpenMMORPG.AddonManager
 {
     public partial class AddonManagerWindow
     {
