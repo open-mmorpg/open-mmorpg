@@ -9,7 +9,7 @@ namespace MultiplayerARPG
         [MenuItem(EditorMenuConsts.VALIDATE_GAME_DATA_AND_PREFABS_MENU, false, EditorMenuConsts.VALIDATE_GAME_DATA_AND_PREFABS_ORDER)]
         public static void ValidateGameDataAndPrefabs()
         {
-            Debug.Log("MMORPG KIT: Validating game data and prefabs...");
+            Debug.Log("Open MMORPG: Validating game data and prefabs...");
             string[] guids = AssetDatabase.FindAssets("t:BaseGameData");
             foreach (string guid in guids)
             {
@@ -48,7 +48,7 @@ namespace MultiplayerARPG
             }
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("MMORPG KIT: Validating game data and prefabs completed.");
+            Debug.Log("Open MMORPG: Validating game data and prefabs completed.");
         }
 
         public static bool ValidatePrefab(GameObject prefab)
@@ -89,10 +89,10 @@ namespace MultiplayerARPG
         [MenuItem(EditorMenuConsts.VALIDATE_OPENED_SCENES_MENU, false, EditorMenuConsts.VALIDATE_OPENED_SCENES_ORDER)]
         public static void ValidateOpenedScenes()
         {
-            Debug.Log("MMORPG KIT: Validating opened scenes...");
+            Debug.Log("Open MMORPG: Validating opened scenes...");
             GameSpawnArea.s_ValidateAllGameSpawnAreas();
             LiteNetLibIdentity.s_AssignSceneObjectIDs();
-            Debug.Log("MMORPG KIT: Validating opened scenes completed.");
+            Debug.Log("Open MMORPG: Validating opened scenes completed.");
         }
     }
 }

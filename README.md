@@ -59,7 +59,7 @@ https://github.com/open-mmorpg/open-mmorpg-installer.git
 
 2. **Run the Wizard to import Settings and the Latest Release**
 
-A setup wizard will appear after the package is installed. If the Wizard does not appear or is inadvertently closed, you can reopen it at Tools → OpenMMORPG → Install → **Show Setup Wizard**
+A setup wizard will appear after the package is installed. If the Wizard does not appear or is inadvertently closed, you can reopen it at Open MMORPG → Install → **Show Setup Wizard**
 
 Click **Import Settings** to install base project settings. The following settings will be overwritten by this process:
 
@@ -72,7 +72,7 @@ Click **Import Settings** to install base project settings. The following settin
 
 Click **Import Open MMORPG** to install the latest release into `Assets/OpenMMORPG`.
 
-After installation, browse available addons via the Addon Manager window (Tools → OpenMMORPG → Develop → **Addon Manager**). Have fun building!
+After installation, browse available addons via the Addon Manager window (Open MMORPG → Develop → **Addon Manager**). Have fun building!
 
 ## Yo! Where's the demo?
 

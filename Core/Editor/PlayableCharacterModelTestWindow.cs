@@ -58,7 +58,7 @@ namespace MultiplayerARPG
         protected Action action;
         protected Playables.PlayableCharacterModel model;
 
-        [MenuItem("Tools/OpenMMORPG/Develop/Test Playable Character Model Animation", false, 10100)]
+        [MenuItem("Open MMORPG/Develop/Test Playable Character Model Animation", false, 10100)]
         public static void CreateNewEditor()
         {
             PlayableCharacterModelTestWindow window = GetWindowWithRect<PlayableCharacterModelTestWindow>(new Rect(0, 0, 300, 200));

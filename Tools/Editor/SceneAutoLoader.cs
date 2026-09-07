@@ -48,7 +48,7 @@ static class SceneAutoLoader
 
     // ====================== Menu Items ======================
 
-    [MenuItem("Tools/OpenMMORPG/Build/Scene Autoload/Select Master Scene...", false, -1000)]
+    [MenuItem("Open MMORPG/Build/Scene Autoload/Select Master Scene...", false, -1000)]
     private static void SelectMasterScene()
     {
         string path = EditorUtility.OpenFilePanel("Select Master Scene", Application.dataPath, "unity");
@@ -61,20 +61,20 @@ static class SceneAutoLoader
         }
     }
 
-    [MenuItem("Tools/OpenMMORPG/Build/Scene Autoload/Load Master On Play", true)]
+    [MenuItem("Open MMORPG/Build/Scene Autoload/Load Master On Play", true)]
     private static bool ShowLoadMasterOnPlay() => !settings.LoadMasterOnPlay;
 
-    [MenuItem("Tools/OpenMMORPG/Build/Scene Autoload/Load Master On Play")]
+    [MenuItem("Open MMORPG/Build/Scene Autoload/Load Master On Play")]
     private static void EnableLoadMasterOnPlay()
     {
         settings.LoadMasterOnPlay = true;
         SaveSettings();
     }
 
-    [MenuItem("Tools/OpenMMORPG/Build/Scene Autoload/Don't Load Master On Play", true)]
+    [MenuItem("Open MMORPG/Build/Scene Autoload/Don't Load Master On Play", true)]
     private static bool ShowDontLoadMasterOnPlay() => settings.LoadMasterOnPlay;
 
-    [MenuItem("Tools/OpenMMORPG/Build/Scene Autoload/Don't Load Master On Play")]
+    [MenuItem("Open MMORPG/Build/Scene Autoload/Don't Load Master On Play")]
     private static void DisableLoadMasterOnPlay()
     {
         settings.LoadMasterOnPlay = false;
@@ -130,7 +130,7 @@ static class SceneAutoLoader
     }
 
     // Optional: Add a menu to show current settings
-    [MenuItem("Tools/OpenMMORPG/Build/Scene Autoload/Show Current Settings")]
+    [MenuItem("Open MMORPG/Build/Scene Autoload/Show Current Settings")]
     private static void ShowCurrentSettings()
     {
         Debug.Log($"[SceneAutoLoader] Load Master On Play: {settings.LoadMasterOnPlay}\n" +
