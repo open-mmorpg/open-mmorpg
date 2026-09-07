@@ -73,9 +73,7 @@ namespace OpenMMORPG.AddonManager
 
 					//import package
 					uiDetailMessage = "Importing addon...";
-					AssetDatabase.ImportPackage(TempPath, false);
-					AssetDatabase.Refresh();
-					File.Delete(TempPath);
+					ImportDownloadedAddon(TempPath);
 				}
 				else
 				{
@@ -86,17 +84,108 @@ namespace OpenMMORPG.AddonManager
 		}
 
 		/// <summary>
+		/// Imports a downloaded addon archive.
+		///
+		/// ImportPackage is asynchronous, so the archive can only be deleted once Unity
+		/// reports it is done; deleting it straight away raced the import and large
+		/// addons never finished importing. Finishing the install from the same callback
+		/// also covers addons that contain no scripts, which never trigger the domain
+		/// reload that the pending state in OnEnable relies on.
+		/// </summary>
+		private void ImportDownloadedAddon(string tempPath)
+		{
+			AssetDatabase.ImportPackageCallback onCompleted = null;
+			AssetDatabase.ImportPackageFailedCallback onFailed = null;
+			AssetDatabase.ImportPackageCallback onCancelled = null;
+
+			System.Action finish = () =>
+			{
+				AssetDatabase.importPackageCompleted -= onCompleted;
+				AssetDatabase.importPackageFailed -= onFailed;
+				AssetDatabase.importPackageCancelled -= onCancelled;
+				try
+				{
+					if (File.Exists(tempPath))
+						File.Delete(tempPath);
+				}
+				catch (System.Exception)
+				{
+					//a leftover file under Temp is harmless
+				}
+			};
+
+			onCompleted = _ =>
+			{
+				finish();
+
+				//the window survives when the addon has no scripts, so complete here
+				if (AddonInstallState.HasPending)
+				{
+					string guid = AddonInstallState.PackageGuid;
+					string folder = ADDON_FOLDER + AddonInstallState.TargetFolder;
+					AddonInstallState.Clear();
+					CompleteInstall(guid, folder);
+				}
+			};
+
+			onFailed = (name, error) =>
+			{
+				finish();
+				AddonInstallState.Clear();
+				Debug.LogError($"[AddonManager {Time.time}] failed to import {name}: {error}");
+				uiDetailMessage = $"Addon import failed: {error}";
+				Repaint();
+			};
+
+			onCancelled = _ =>
+			{
+				finish();
+				AddonInstallState.Clear();
+				uiDetailMessage = "Addon import cancelled.";
+				Repaint();
+			};
+
+			AssetDatabase.importPackageCompleted += onCompleted;
+			AssetDatabase.importPackageFailed += onFailed;
+			AssetDatabase.importPackageCancelled += onCancelled;
+
+			AssetDatabase.ImportPackage(tempPath, false);
+		}
+
+		/// <summary>
+		/// Waits for an asset matching the filter to be indexed, up to a timeout. A large
+		/// addon is still being imported and indexed well after the import callback, so a
+		/// single fixed delay is not enough to find its marker file.
+		/// </summary>
+		private static async Task<string[]> FindAssetsWhenIndexed(string filter, double timeoutSeconds = 60d)
+		{
+			double deadline = EditorApplication.timeSinceStartup + timeoutSeconds;
+			AssetDatabase.Refresh();
+
+			while (true)
+			{
+				if (!EditorApplication.isUpdating && !EditorApplication.isCompiling)
+				{
+					string[] hits = AssetDatabase.FindAssets(filter);
+					if (hits.Length > 0)
+						return hits;
+				}
+
+				if (EditorApplication.timeSinceStartup > deadline)
+					return new string[0];
+
+				await Task.Delay(500);
+			}
+		}
+
+		/// <summary>
 		/// Callback from OnEnable after package import and script recompilation
 		/// </summary>
 		/// <param name="guid"></param>
 		private async void CompleteInstall(string pendingGuid, string targetFolder)
 		{
-			//wait for reindex to complete
-			AssetDatabase.Refresh();
-			await Task.Delay(1000);
-
 			//find asset with the pendingGuid to locate the imported folder
-			string[] sourceGuids = AssetDatabase.FindAssets(pendingGuid);
+			string[] sourceGuids = await FindAssetsWhenIndexed(pendingGuid);
 			if (sourceGuids.Length == 0)
 			{
 				Debug.LogError($"[AddonManager {Time.time}] no assets found with GUID filter: {pendingGuid}");
@@ -160,6 +249,19 @@ namespace OpenMMORPG.AddonManager
 				}
 			}
 
+			//and any empty parents it left behind, such as the folder an addon was
+			//packaged under, which is not necessarily the folder addons install into
+			string parent = Path.GetDirectoryName(importFolder)?.Replace("\\", "/");
+			while (!string.IsNullOrEmpty(parent)
+				&& parent != "Assets"
+				&& !targetFolder.StartsWith(parent + "/")
+				&& AssetDatabase.IsValidFolder(parent)
+				&& AssetDatabase.FindAssets("", new[] { parent }).Length == 0)
+			{
+				AssetDatabase.DeleteAsset(parent);
+				parent = Path.GetDirectoryName(parent)?.Replace("\\", "/");
+			}
+
 			//final refresh to make sure everything is synced
 			//AssetDatabase.Refresh();
 
@@ -174,7 +276,7 @@ namespace OpenMMORPG.AddonManager
 					Repaint();
 
 					//re-find the guid file
-					string[] postInstallGuids = AssetDatabase.FindAssets(pendingGuid);
+					string[] postInstallGuids = await FindAssetsWhenIndexed(pendingGuid, 30d);
 					if (postInstallGuids.Length == 0)
 					{
 						Debug.LogError($"[AddonManager {Time.time}] no installed assets found with GUID filter: {pendingGuid}");
