@@ -1,6 +1,6 @@
 # OpenMMORPG Addon Manager
 
-<img width="64" height="64" alt="image" src="https://raw.githubusercontent.com/denariigames/mmokitce-addon-manager/refs/heads/master/images/LogoIcon.png" />
+<img width="64" height="64" alt="image" src="https://raw.githubusercontent.com/open-mmorpg/open-mmorpg-addon-manager/refs/heads/master/images/LogoIcon.png" />
 
 **Addon Manager** is a custom Unity Editor window designed for [**OpenMMORPG**](https://github.com/open-mmorpg/open-mmorpg) that provides a clean, professional interface for discovering, installing, and managing addons.
 
@@ -11,15 +11,15 @@ It functions as a private, curated "addon marketplace" directly inside the Unity
 <img width="260" height="475" alt="image" src="https://github.com/user-attachments/assets/94e477b5-09a7-4e3d-9af1-e3d2e8b07777" />
 
 - **Dynamic Addon Discovery**
-  - Addons are loaded from a central [manifest.json](https://github.com/denariigames/mmokitce-addon-manager/blob/master/manifest.json)
+  - Addons are loaded from a central [manifest.json](https://github.com/open-mmorpg/open-mmorpg-addon-manager/blob/master/manifest.json)
   - Shows updates available to installed addons
   - Clean, Unity Package Manager-inspired layout
 
 - **Smart Filtering**
   - Category
-  - Publisher (Core <img width="16" height="16" alt="image" src="https://raw.githubusercontent.com/denariigames/mmokitce-addon-manager/refs/heads/master/images/CoreBadge.png" /> or Community)
-  - Status (All, Installed <img width="16" height="16" alt="image" src="https://raw.githubusercontent.com/denariigames/mmokitce-addon-manager/refs/heads/master/images/CheckIcon.png" />, Update Available <img width="16" height="16" alt="image" src="https://raw.githubusercontent.com/denariigames/mmokitce-addon-manager/refs/heads/master/images/UpdateIcon.png" />, Not Installed)
-  - Recency (Anytime, This week <img width="16" height="16" alt="image" src="https://raw.githubusercontent.com/denariigames/mmokitce-addon-manager/refs/heads/master/images/NewBadge.png" />, This month)
+  - Publisher (Core <img width="16" height="16" alt="image" src="https://raw.githubusercontent.com/open-mmorpg/open-mmorpg-addon-manager/refs/heads/master/images/CoreBadge.png" /> or Community)
+  - Status (All, Installed <img width="16" height="16" alt="image" src="https://raw.githubusercontent.com/open-mmorpg/open-mmorpg-addon-manager/refs/heads/master/images/CheckIcon.png" />, Update Available <img width="16" height="16" alt="image" src="https://raw.githubusercontent.com/open-mmorpg/open-mmorpg-addon-manager/refs/heads/master/images/UpdateIcon.png" />, Not Installed)
+  - Recency (Anytime, This week <img width="16" height="16" alt="image" src="https://raw.githubusercontent.com/open-mmorpg/open-mmorpg-addon-manager/refs/heads/master/images/NewBadge.png" />, This month)
 
 - **Clean Project Structure**
   - Addons saved to OpenMMORPG_addons folder, organized by category
@@ -33,7 +33,7 @@ It functions as a private, curated "addon marketplace" directly inside the Unity
 ## Contributing Addons (Easy Way)
 
 **NEW**
-[Addon Packager](https://github.com/denariigames/mmokitce-addons/tree/master/AddonPackager) is a custom Unity Editor tool designed for OpenMMORPG community contributions. It simplifies the process of packaging your addons by:
+[Addon Packager](https://github.com/open-mmorpg/open-mmorpg-addons/tree/master/AddonPackager) is a custom Unity Editor tool designed for OpenMMORPG community contributions. It simplifies the process of packaging your addons by:
 
 - Exporting your addon folder as a .unitypackage with the required guid file
 - Automatically generating a properly formatted package.json manifest
@@ -74,7 +74,7 @@ Optional:
 - patchFile (filename of patch file in repo at same root as package.json, e.g. myaddon.patch)
 - dependencies (array of other addon guids, e.g. ["xxx", "yyy"])
 
-A valid example package.json is [available here](https://github.com/denariigames/mmokitce-addon-manager/blob/master/example-package.json).
+A valid example package.json is [available here](https://github.com/open-mmorpg/open-mmorpg-addon-manager/blob/master/example-package.json).
 
 ### Approved Categories
 

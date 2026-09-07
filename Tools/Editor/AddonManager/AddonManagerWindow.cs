@@ -55,7 +55,7 @@ namespace OpenMMORPG.AddonManager
 
     public partial class AddonManagerWindow : EditorWindow
     {
-		private const string PACKAGE_MANIFEST_URL = "https://raw.githubusercontent.com/denariigames/mmokitce-addon-manager/refs/heads/master/manifest.json";
+		private const string PACKAGE_MANIFEST_URL = "https://raw.githubusercontent.com/open-mmorpg/open-mmorpg-addon-manager/refs/heads/master/manifest.json";
 		private const string ADDON_FOLDER = "Assets/OpenMMORPG_addons/";
 
 		private List<PackageInfo> packages = new List<PackageInfo>();
@@ -93,8 +93,8 @@ namespace OpenMMORPG.AddonManager
 
 			if (AddonInstallState.HasPending)
 			{
+				//CompleteInstall clears the pending state once it actually finishes
 				CompleteInstall(AddonInstallState.PackageGuid, ADDON_FOLDER + AddonInstallState.TargetFolder);
-				AddonInstallState.Clear();
 			}
 
 			//clear filters

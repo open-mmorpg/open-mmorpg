@@ -121,10 +121,9 @@ namespace OpenMMORPG.AddonManager
 				//the window survives when the addon has no scripts, so complete here
 				if (AddonInstallState.HasPending)
 				{
-					string guid = AddonInstallState.PackageGuid;
-					string folder = ADDON_FOLDER + AddonInstallState.TargetFolder;
-					AddonInstallState.Clear();
-					CompleteInstall(guid, folder);
+					//the pending state stays until CompleteInstall finishes, so a domain
+					//reload from the addon's own scripts resumes it from OnEnable
+					CompleteInstall(AddonInstallState.PackageGuid, ADDON_FOLDER + AddonInstallState.TargetFolder);
 				}
 			};
 
@@ -302,6 +301,11 @@ namespace OpenMMORPG.AddonManager
 			{
 				Debug.LogError($"[AddonManager {Time.time}] failed to get installed packages");
 			}
+
+			//only now is the install finished. Clearing the pending state earlier meant
+			//an addon whose scripts trigger a domain reload part way through lost the
+			//rest of the install, because the state that resumes it was already gone.
+			AddonInstallState.Clear();
 		}
 
 		/// <summary>
