@@ -2,6 +2,9 @@
 
 using ConcurrentCollections;
 using Cysharp.Threading.Tasks;
+#if !DISABLE_ADDRESSABLES
+using Insthync.AddressableAssetTools;
+#endif
 using Insthync.DevExtension;
 using LiteNetLib;
 using LiteNetLib.Utils;
