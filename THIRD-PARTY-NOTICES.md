@@ -51,5 +51,4 @@ project's own repository, or from the copyright recorded in the binary itself.
 
 | Component | Path | Problem |
 | --- | --- | --- |
-| Colored Hierarchy Headers | `ThirdParty/ColoredHierarchyHeaders` | [The upstream repository](https://github.com/dands-salaun/UnityColoredHierarchy) by Dands Salaun publishes no licence, and its `package.json` declares none, so the default is all rights reserved. Nothing in the kit references it and it is seven files, so it can be removed if permission cannot be obtained. |
 | SerializeRegistrySourceGenerator | `ThirdParty/LiteNetLibManager/Scripts/SourceGenerators/SerializeRegistrySourceGenerator.dll` | Ships as a compiled library with no source, no company and no copyright in its metadata. It sits inside LiteNetLibManager and is presumably built from that MIT project, but that should be confirmed with its author. |
