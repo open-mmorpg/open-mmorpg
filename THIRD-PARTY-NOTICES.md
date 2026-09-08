@@ -38,6 +38,7 @@ project's own repository, or from the copyright recorded in the binary itself.
 | LiteNetLib | `ThirdParty/LiteNetLibManager/Plugins/LiteNetLib` | MIT | Copyright (c) 2025 Ruslan Pyrch | [licence](https://github.com/RevenantX/LiteNetLib/blob/master/LICENSE.txt) |
 | UniTask | `ThirdParty/LiteNetLibManager/Plugins/UniTask` | MIT | Copyright (c) 2019 Yoshifumi Kawai / Cysharp, Inc. | [licence](https://github.com/Cysharp/UniTask/blob/master/LICENSE) |
 | ZString | `ThirdParty/LiteNetLibManager/Plugins/ZString` | MIT | Copyright (c) 2020 Cysharp, Inc. | [licence](https://github.com/Cysharp/ZString/blob/master/LICENSE) |
+| SerializeRegistrySourceGenerator | `ThirdParty/LiteNetLibManager/Scripts/SourceGenerators/SerializeRegistrySourceGenerator.dll` | MIT | Copyright (c) 2017 Ittipon Teerapruettikulchai | [licence](https://github.com/insthync/LiteNetLibManager/blob/main/LICENSE) |
 | ConcurrentHashSet | `Core/Plugins/ConcurrentCollections.dll` | MIT | Copyright (c) 2019 Bar Arnon | [licence](https://github.com/i3arnon/ConcurrentHashSet/blob/main/LICENSE) |
 | MySqlConnector | `MMO/Plugins/MySqlConnector.dll` | MIT | Copyright (c) 2016-2026 Bradley Grainger | [licence](https://github.com/mysql-net/MySqlConnector/blob/master/LICENSE) |
 | Fleck | `ThirdParty/LiteNetLibManager/Plugins/Fleck.dll` | MIT | Copyright (c) 2010-2018 Jason Staten | [licence](https://github.com/statianzo/Fleck/blob/master/LICENSE) |
@@ -47,8 +48,15 @@ project's own repository, or from the copyright recorded in the binary itself.
 | Mono.Data.Sqlite | `MMO/Plugins/Mono.Data.Sqlite.dll` | Public domain | Declares "Public Domain"; originates from System.Data.SQLite and ships with Mono, whose class libraries are MIT | [licence](https://github.com/mono/mono/blob/main/LICENSE) |
 | Mono I18N | `MMO/Plugins/I18N.dll, MMO/Plugins/I18N.West.dll` | MIT | Mono class libraries, MIT per the Mono licence | [licence](https://github.com/mono/mono/blob/main/LICENSE) |
 
-## Still unresolved
+## Notes for review
 
-| Component | Path | Problem |
-| --- | --- | --- |
-| SerializeRegistrySourceGenerator | `ThirdParty/LiteNetLibManager/Scripts/SourceGenerators/SerializeRegistrySourceGenerator.dll` | Ships as a compiled library with no source, no company and no copyright in its metadata. It sits inside LiteNetLibManager and is presumably built from that MIT project, but that should be confirmed with its author. |
+`SerializeRegistrySourceGenerator.dll` ships as a compiled library with no source
+alongside it. It is built from LiteNetLibManager's own
+[source generator project](https://github.com/insthync/LiteNetLibManager/tree/main/Scripts/SourceGenerators/SerializeRegistrySourceGenerator~),
+which is MIT, and the same binary is published at the same path in that repository.
+It is therefore covered by the bundled
+[LiteNetLibManager licence](ThirdParty/LiteNetLibManager/LICENSE).
+
+The native SQLite libraries under `MMO/Plugins` are public domain, but Asset Store
+guideline 1.5.a restricts executables, so they are the most likely thing for a
+reviewer to query.
