@@ -3,10 +3,9 @@
 Open MMORPG is released under the MIT License; see [LICENSE](LICENSE).
 
 This file lists third-party components distributed with the kit, as required for
-Unity Asset Store submissions. Each component below keeps the licence shipped in
-its own folder.
+Unity Asset Store submissions.
 
-## Components with a bundled licence
+## Components with a licence file in this repository
 
 | Component | Licence | Copyright | Licence file |
 | --- | --- | --- | --- |
@@ -29,34 +28,28 @@ its own folder.
 | `ThirdParty/UpdateManager` | MIT | 2026 Ittipon Teerapruettikulchai | [`ThirdParty/UpdateManager/LICENSE`](ThirdParty/UpdateManager/LICENSE) |
 | `ThirdParty/xNode` | MIT | 2017 Thor Brigsted | [`ThirdParty/xNode/LICENSE.md`](ThirdParty/xNode/LICENSE.md) |
 
-## Components that still need a licence recorded
+## Components whose licence was confirmed upstream
 
-These ship with the kit but carry no licence file in this repository. Each one
-must be confirmed, and its licence text added, before an Asset Store submission.
+These ship without their own licence file. The licence below was taken from the
+project's own repository, or from the copyright recorded in the binary itself.
 
-| Component | Path | Notes |
+| Component | Path | Licence | Copyright | Source |
+| --- | --- | --- | --- | --- |
+| LiteNetLib | `ThirdParty/LiteNetLibManager/Plugins/LiteNetLib` | MIT | Copyright (c) 2025 Ruslan Pyrch | [licence](https://github.com/RevenantX/LiteNetLib/blob/master/LICENSE.txt) |
+| UniTask | `ThirdParty/LiteNetLibManager/Plugins/UniTask` | MIT | Copyright (c) 2019 Yoshifumi Kawai / Cysharp, Inc. | [licence](https://github.com/Cysharp/UniTask/blob/master/LICENSE) |
+| ZString | `ThirdParty/LiteNetLibManager/Plugins/ZString` | MIT | Copyright (c) 2020 Cysharp, Inc. | [licence](https://github.com/Cysharp/ZString/blob/master/LICENSE) |
+| ConcurrentHashSet | `Core/Plugins/ConcurrentCollections.dll` | MIT | Copyright (c) 2019 Bar Arnon | [licence](https://github.com/i3arnon/ConcurrentHashSet/blob/main/LICENSE) |
+| MySqlConnector | `MMO/Plugins/MySqlConnector.dll` | MIT | Copyright (c) 2016-2026 Bradley Grainger | [licence](https://github.com/mysql-net/MySqlConnector/blob/master/LICENSE) |
+| Fleck | `ThirdParty/LiteNetLibManager/Plugins/Fleck.dll` | MIT | Copyright (c) 2010-2018 Jason Staten | [licence](https://github.com/statianzo/Fleck/blob/master/LICENSE) |
+| System.Diagnostics.DiagnosticSource | `MMO/Plugins/System.Diagnostics.DiagnosticSource.dll` | MIT | Copyright (c) .NET Foundation and Contributors | [licence](https://github.com/dotnet/runtime/blob/main/LICENSE.TXT) |
+| System.Runtime.CompilerServices.Unsafe | `ThirdParty/LiteNetLibManager/Plugins/System.Runtime.CompilerServices.Unsafe.dll` | MIT | Copyright (c) .NET Foundation and Contributors | [licence](https://github.com/dotnet/runtime/blob/main/LICENSE.TXT) |
+| SQLite | `MMO/Plugins/SQLite_x64/sqlite3.dll, MMO/Plugins/SQLite_x86/sqlite3.dll` | Public domain | Dedicated to the public domain by its authors | [licence](https://www.sqlite.org/copyright.html) |
+| Mono.Data.Sqlite | `MMO/Plugins/Mono.Data.Sqlite.dll` | Public domain | Declares "Public Domain"; originates from System.Data.SQLite and ships with Mono, whose class libraries are MIT | [licence](https://github.com/mono/mono/blob/main/LICENSE) |
+| Mono I18N | `MMO/Plugins/I18N.dll, MMO/Plugins/I18N.West.dll` | MIT | Mono class libraries, MIT per the Mono licence | [licence](https://github.com/mono/mono/blob/main/LICENSE) |
+
+## Still unresolved
+
+| Component | Path | Problem |
 | --- | --- | --- |
-| Colored Hierarchy Headers | `ThirdParty/ColoredHierarchyHeaders` | Authored by Dands Salaun per its `package.json`, which declares no licence. |
-| LiteNetLib | `ThirdParty/LiteNetLibManager/Plugins/LiteNetLib` | Source headers state the MIT licence; the licence file itself is not bundled. |
-| UniTask | `ThirdParty/LiteNetLibManager/Plugins/UniTask` | Vendored source with no licence file bundled. |
-| ZString | `ThirdParty/LiteNetLibManager/Plugins/ZString` | Source headers state the MIT licence; the licence file itself is not bundled. |
-
-### Compiled libraries
-
-Binaries are shipped without accompanying licence text. Confirm each one, and note
-that Asset Store guideline 1.5.a restricts executables, so the native SQLite
-libraries in particular are worth checking with review.
-
-| Library | Path |
-| --- | --- |
-| `ConcurrentCollections.dll` | `Core/Plugins/ConcurrentCollections.dll` |
-| `I18N.West.dll` | `MMO/Plugins/I18N.West.dll` |
-| `I18N.dll` | `MMO/Plugins/I18N.dll` |
-| `Mono.Data.Sqlite.dll` | `MMO/Plugins/Mono.Data.Sqlite.dll` |
-| `MySqlConnector.dll` | `MMO/Plugins/MySqlConnector.dll` |
-| `sqlite3.dll` | `MMO/Plugins/SQLite_x64/sqlite3.dll` |
-| `sqlite3.dll` | `MMO/Plugins/SQLite_x86/sqlite3.dll` |
-| `System.Diagnostics.DiagnosticSource.dll` | `MMO/Plugins/System.Diagnostics.DiagnosticSource.dll` |
-| `Fleck.dll` | `ThirdParty/LiteNetLibManager/Plugins/Fleck.dll` |
-| `System.Runtime.CompilerServices.Unsafe.dll` | `ThirdParty/LiteNetLibManager/Plugins/System.Runtime.CompilerServices.Unsafe.dll` |
-| `SerializeRegistrySourceGenerator.dll` | `ThirdParty/LiteNetLibManager/Scripts/SourceGenerators/SerializeRegistrySourceGenerator.dll` |
+| Colored Hierarchy Headers | `ThirdParty/ColoredHierarchyHeaders` | [The upstream repository](https://github.com/dands-salaun/UnityColoredHierarchy) by Dands Salaun publishes no licence, and its `package.json` declares none, so the default is all rights reserved. Nothing in the kit references it and it is seven files, so it can be removed if permission cannot be obtained. |
+| SerializeRegistrySourceGenerator | `ThirdParty/LiteNetLibManager/Scripts/SourceGenerators/SerializeRegistrySourceGenerator.dll` | Ships as a compiled library with no source, no company and no copyright in its metadata. It sits inside LiteNetLibManager and is presumably built from that MIT project, but that should be confirmed with its author. |
