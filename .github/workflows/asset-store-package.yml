@@ -1,0 +1,130 @@
+name: Asset Store package
+
+# Builds the .unitypackage that gets uploaded to the Unity Asset Store, from the
+# tagged state of the kit. Pushing a v* tag publishes a release with the archive
+# attached; running it by hand builds the same archive and leaves it on the run
+# so it can be checked without publishing anything.
+#
+# No Unity install or licence is needed: Tools~/build_unitypackage.py writes the
+# archive format directly.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag or commit to build (defaults to the current branch)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: asset-store-package-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the kit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build the package
+        run: |
+          python "Tools~/build_unitypackage.py" kit . Assets/OpenMMORPG OpenMMORPG.unitypackage --deps "Tools~/dependencies.json"
+
+      - name: Verify the package
+        run: |
+          python - <<'EOF'
+          import json, os, tarfile
+
+          archive = "OpenMMORPG.unitypackage"
+          with tarfile.open(archive) as t:
+              members = t.getmembers()
+              paths = {}
+              manifest = None
+              for m in members:
+                  if not m.isfile():
+                      continue
+                  if m.name == "packagemanagermanifest/asset":
+                      manifest = json.loads(t.extractfile(m).read().decode("utf-8"))
+                  elif m.name.endswith("/pathname"):
+                      paths[m.name] = t.extractfile(m).read().decode("utf-8").split("\n")[0]
+
+          size_mb = os.path.getsize(archive) / 1e6
+          print(f"{archive}: {len(paths)} entries, {size_mb:.1f} MB")
+
+          # Everything must land under the kit folder, or an import would scatter
+          # files across the user's project.
+          stray = [p for p in paths.values() if not p.startswith("Assets/OpenMMORPG/")]
+          assert not stray, f"entries outside the kit folder: {stray[:5]}"
+          assert len(paths) >= 2000, f"only {len(paths)} entries, the kit looks incomplete"
+
+          # Build tooling and CI config must never ship to customers.
+          leaked = [p for p in paths.values() if "/Tools~/" in p or "/.github/" in p]
+          assert not leaked, f"build tooling leaked into the package: {leaked[:5]}"
+
+          # Unity's submission guidelines require third-party notices in the package.
+          assert any(p.endswith("THIRD-PARTY-NOTICES.md") for p in paths.values()), \
+              "THIRD-PARTY-NOTICES.md is missing, which Asset Store review requires"
+          assert any(p.endswith("Assets/OpenMMORPG/LICENSE") for p in paths.values()), \
+              "LICENSE is missing"
+
+          assert manifest, "no Package Manager manifest embedded"
+          deps = manifest["dependencies"]
+          print(f"embedded {len(deps)} package dependencies")
+          assert "com.unity.render-pipelines.universal" in deps, \
+              "the kit needs URP; it must be in the embedded dependencies"
+          EOF
+
+      - name: Warn if the installer declares different dependencies
+        continue-on-error: true
+        run: |
+          curl -sfL -o installer-package.json \
+            https://raw.githubusercontent.com/open-mmorpg/open-mmorpg-installer/master/package.json || exit 0
+          python - <<'EOF'
+          import json
+          kit = json.load(open("Tools~/dependencies.json", encoding="utf-8"))["dependencies"]
+          inst = json.load(open("installer-package.json", encoding="utf-8"))["dependencies"]
+          if kit != inst:
+              only_kit = {k: v for k, v in kit.items() if inst.get(k) != v}
+              only_inst = {k: v for k, v in inst.items() if kit.get(k) != v}
+              print("::warning::kit and installer dependency lists differ")
+              print("  kit:", only_kit)
+              print("  installer:", only_inst)
+          else:
+              print("dependency lists match the installer")
+          EOF
+
+      - name: Upload for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenMMORPG-unitypackage
+          path: OpenMMORPG.unitypackage
+          retention-days: 14
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          notes="Import \`OpenMMORPG.unitypackage\` into a Unity 6000.3 project, or install the wizard from https://github.com/open-mmorpg/open-mmorpg-installer.
+
+          This archive is the Asset Store build: the complete kit, with its Unity package dependencies embedded so they are added on import."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" OpenMMORPG.unitypackage --clobber
+          else
+            gh release create "$TAG" --title "$TAG" --notes "$notes" OpenMMORPG.unitypackage
+          fi
