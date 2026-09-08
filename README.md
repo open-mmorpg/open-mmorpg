@@ -48,7 +48,7 @@ All entity movement data processing converted from monothreaded per-entity updat
 
 ## Quick Start / Installation Wizard
 
-Open MMORPG targets **Unity 6000.3** or newer.
+Open MMORPG targets **Unity 6000.3** or newer and renders with the **Universal Render Pipeline**. The installer adds URP for you, so a Built-in Render Pipeline project works too, but the kit's graphic settings are URP specific.
 
 1. **Install the package from a git URL**
 
