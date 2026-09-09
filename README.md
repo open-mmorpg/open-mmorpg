@@ -87,7 +87,7 @@ To update, update the package in the Package Manager and re-run the Wizard.
 The kit lives directly in your project's `Assets` folder, so you can work on it in place. Delete the imported `Assets/OpenMMORPG` directory and clone this repository in its place:
 
 ```sh
-git clone https://github.com/open-mmorpg/open-mmorpg.git Assets/OpenMMORPG
+git clone https://github.com/open-mmorpg/OpenMMORPG.git Assets/OpenMMORPG
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch model and how the kit is assembled from its source repositories.

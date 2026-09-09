@@ -2,7 +2,7 @@
 
 <img width="64" height="64" alt="image" src="https://raw.githubusercontent.com/open-mmorpg/open-mmorpg-addon-manager/refs/heads/master/images/LogoIcon.png" />
 
-**Addon Manager** is a custom Unity Editor window designed for [**OpenMMORPG**](https://github.com/open-mmorpg/open-mmorpg) that provides a clean, professional interface for discovering, installing, and managing addons.
+**Addon Manager** is a custom Unity Editor window designed for [**OpenMMORPG**](https://github.com/open-mmorpg/OpenMMORPG) that provides a clean, professional interface for discovering, installing, and managing addons.
 
 It functions as a private, curated "addon marketplace" directly inside the Unity Editor, making it easy to browse and install community or official addons without leaving your project.
 
