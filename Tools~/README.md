@@ -25,3 +25,18 @@ adds them to the project. The installer declares the same list in its own
 
 To rehearse without publishing, run the workflow by hand from the Actions tab. It
 builds and verifies the same archive and leaves it on the run as an artifact.
+
+## Project settings
+
+`ProjectSettings/` holds the sanitised settings the kit expects. Rebuild the archive
+the kit ships after changing them:
+
+```sh
+python "Tools~/build_unitypackage.py" settings "Tools~/ProjectSettings" "Tools/Install/OpenMMORPG_Settings.unitypackage"
+```
+
+That archive travels inside the kit, and `Open MMORPG > Install > Import Project
+Settings` imports it, so people who install from the Asset Store get the option
+without the installer package. Keep project specific values out of
+`ProjectSettings.asset`, namely `productName`, `cloudProjectId`, `organizationId`,
+`projectName`, `metroPackageName` and `metroApplicationDescription`.

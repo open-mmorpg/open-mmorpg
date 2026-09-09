@@ -74,6 +74,8 @@ Click **Import Open MMORPG** to install the latest release into `Assets/OpenMMOR
 
 After installation, browse available addons via the Addon Manager window (Open MMORPG → Develop → **Addon Manager**). Have fun building!
 
+If you imported the kit on its own, without the installer package, apply the same base settings from Open MMORPG → Install → **Import Project Settings**. It lists exactly which files it replaces before doing anything.
+
 ## Yo! Where's the demo?
 
 A demo is not bundled with this release yet. For a developer-focused demo with content, check the Addon Manager for TinyEpicDemo.

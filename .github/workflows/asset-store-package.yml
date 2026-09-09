@@ -81,6 +81,13 @@ jobs:
           assert any(p.endswith("Assets/OpenMMORPG/LICENSE") for p in paths.values()), \
               "LICENSE is missing"
 
+          # Asset Store users have no installer, so the settings archive and the menu
+          # item that imports it have to travel inside the kit.
+          assert any(p.endswith("Tools/Install/OpenMMORPG_Settings.unitypackage") for p in paths.values()), \
+              "the settings archive is missing, so Asset Store users could not import settings"
+          assert any(p.endswith("Tools/Editor/ProjectSettingsInstaller.cs") for p in paths.values()), \
+              "the settings menu item is missing"
+
           assert manifest, "no Package Manager manifest embedded"
           deps = manifest["dependencies"]
           print(f"embedded {len(deps)} package dependencies")
