@@ -1,0 +1,45 @@
+name: Checks
+
+# Runs on every push and pull request. Deliberately needs no Unity install or
+# licence, so it finishes in seconds: it checks the repository's own integrity and
+# then builds the package to catch packaging regressions before a release rather
+# than during one.
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the kit
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # An asset with no .meta is skipped by the exporter and silently never ships,
+      # a shared GUID breaks references, and a ThirdParty component missing from the
+      # notices fails Asset Store review.
+      - name: Repository integrity
+        run: python "Tools~/check_repo.py" .
+
+      - name: Build the package
+        run: |
+          python "Tools~/build_unitypackage.py" kit . Assets/OpenMMORPG OpenMMORPG.unitypackage --deps "Tools~/dependencies.json"
+
+      - name: Package contents
+        run: python "Tools~/check_package.py" OpenMMORPG.unitypackage

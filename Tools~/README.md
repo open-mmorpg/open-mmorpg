@@ -40,3 +40,23 @@ Settings` imports it, so people who install from the Asset Store get the option
 without the installer package. Keep project specific values out of
 `ProjectSettings.asset`, namely `productName`, `cloudProjectId`, `organizationId`,
 `projectName`, `metroPackageName` and `metroApplicationDescription`.
+
+## Checks
+
+[Checks](../.github/workflows/checks.yml) runs on every push and pull request, needs no
+Unity install, and finishes in seconds. Run the same checks locally before pushing:
+
+```sh
+python "Tools~/check_repo.py" .
+python "Tools~/build_unitypackage.py" kit . Assets/OpenMMORPG OpenMMORPG.unitypackage --deps "Tools~/dependencies.json"
+python "Tools~/check_package.py" OpenMMORPG.unitypackage
+```
+
+`check_repo.py` catches an asset with no `.meta`, which the exporter skips so the file
+silently never ships, plus orphan `.meta` files, duplicate GUIDs, names differing only
+in case, and a `ThirdParty` component missing from `THIRD-PARTY-NOTICES.md`.
+
+`check_package.py` inspects a built archive: everything under `Assets/OpenMMORPG`, no
+build tooling or CI config inside, the licence, notices, project settings archive and
+settings menu item all present, and URP among the embedded dependencies. The release
+workflow runs the same script, so a tag build cannot pass looser rules than a push.

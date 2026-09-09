@@ -44,56 +44,10 @@ jobs:
         run: |
           python "Tools~/build_unitypackage.py" kit . Assets/OpenMMORPG OpenMMORPG.unitypackage --deps "Tools~/dependencies.json"
 
+      # Same script the Checks workflow runs, so a tag build cannot pass looser
+      # rules than an ordinary push.
       - name: Verify the package
-        run: |
-          python - <<'EOF'
-          import json, os, tarfile
-
-          archive = "OpenMMORPG.unitypackage"
-          with tarfile.open(archive) as t:
-              members = t.getmembers()
-              paths = {}
-              manifest = None
-              for m in members:
-                  if not m.isfile():
-                      continue
-                  if m.name == "packagemanagermanifest/asset":
-                      manifest = json.loads(t.extractfile(m).read().decode("utf-8"))
-                  elif m.name.endswith("/pathname"):
-                      paths[m.name] = t.extractfile(m).read().decode("utf-8").split("\n")[0]
-
-          size_mb = os.path.getsize(archive) / 1e6
-          print(f"{archive}: {len(paths)} entries, {size_mb:.1f} MB")
-
-          # Everything must land under the kit folder, or an import would scatter
-          # files across the user's project.
-          stray = [p for p in paths.values() if not p.startswith("Assets/OpenMMORPG/")]
-          assert not stray, f"entries outside the kit folder: {stray[:5]}"
-          assert len(paths) >= 2000, f"only {len(paths)} entries, the kit looks incomplete"
-
-          # Build tooling and CI config must never ship to customers.
-          leaked = [p for p in paths.values() if "/Tools~/" in p or "/.github/" in p]
-          assert not leaked, f"build tooling leaked into the package: {leaked[:5]}"
-
-          # Unity's submission guidelines require third-party notices in the package.
-          assert any(p.endswith("THIRD-PARTY-NOTICES.md") for p in paths.values()), \
-              "THIRD-PARTY-NOTICES.md is missing, which Asset Store review requires"
-          assert any(p.endswith("Assets/OpenMMORPG/LICENSE") for p in paths.values()), \
-              "LICENSE is missing"
-
-          # Asset Store users have no installer, so the settings archive and the menu
-          # item that imports it have to travel inside the kit.
-          assert any(p.endswith("Tools/Install/OpenMMORPG_Settings.unitypackage") for p in paths.values()), \
-              "the settings archive is missing, so Asset Store users could not import settings"
-          assert any(p.endswith("Tools/Editor/ProjectSettingsInstaller.cs") for p in paths.values()), \
-              "the settings menu item is missing"
-
-          assert manifest, "no Package Manager manifest embedded"
-          deps = manifest["dependencies"]
-          print(f"embedded {len(deps)} package dependencies")
-          assert "com.unity.render-pipelines.universal" in deps, \
-              "the kit needs URP; it must be in the embedded dependencies"
-          EOF
+        run: python "Tools~/check_package.py" OpenMMORPG.unitypackage
 
       - name: Warn if the installer declares different dependencies
         continue-on-error: true
